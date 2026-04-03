@@ -3,3 +3,39 @@ title: "Project 1"
 author: "Tyler Stoen"
 format: html
 ---
+
+```{r}
+# Get the Data
+
+# Read in with tidytuesdayR package 
+# Install from CRAN via: install.packages("tidytuesdayR")
+# This loads the readme and all the datasets for the week of interest
+
+# Either ISO-8601 date or year/week works!
+
+tuesdata <- tidytuesdayR::tt_load('2021-01-26')
+tuesdata <- tidytuesdayR::tt_load(2021, week = 5)
+
+plastics <- tuesdata$plastics
+
+# Or read in the data manually
+
+plastics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2021/2021-01-26/plastics.csv')
+
+```
+
+## Checkpoint 1
+
+Questions that can be answered with this dataset alone:
+
+ - Which type of plastic dominates waste globally? In countries that produce the most plastic waste (US, China, India, etc.)?
+ 
+ - Which companies contribute the most to global plastic waste?
+ 
+ Questions that need outside data:
+ 
+ - Which countries produce the most plastic waste per capita? How does a country's GDP relate their plastic waste production? Requires descriptive data on countries.
+ 
+ - Of countries that produce less of waste, which also have a high recycling rate? Need data on recycling tendencies of countries.
+
+
