@@ -24,6 +24,17 @@ plastics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/t
 
 ```
 
+This dataset comes from global plastic waste cleanup efforts, where volunteers collect and categorize plastic items found in the environment. Each row in data represents a cleanup outcome for a specific country, year (2019 or 2020), and the parent company (whats the source of plastic).
+
+The data records counts of different types of plastic materials collected, including plastic type such as HDPE (High density polyethylene count), LDPE (Low density), Polyester (PET), polypropylene, polystyrene, PVC and other. The resulting total number of plastic items is stored in a separate column and is the sum of the number of plastic items in each type.
+
+With this dataset, we are able to look and study how plastic waste varies by geography, material type and source company across a two year period.
+
+The data was cleaned by first combining multiple country-level CSV files for each year into a single dataset using row-binding. Column types were explicitly specified to ensure consistency across files, with categorical variables stored as character and count variables as numeric. A year variable was added to distinguish observations from 2019 and 2020. The grand total variable was converted from character to numeric using a parsing function, parse_number(), to remove punctuation. Names were also converted to lowercase. The 2019 data required additional cleaning to resolve inconsistencies, including extracting country names from file names, renaming variables to match the 2020 structure, and combining duplicated columns (e.g., pp and pp_2, ps and ps_2). After merging duplicate columns, the redundant variables were removed. These steps resulted in a unified dataset with consistent structure across both years.
+
+On top of the data cleaning done as preparation, there were some observations with missing data. In many of the cases, plastic was all classified under "other", which provides an incorrect split of plastic types. This proves problematic for visualizing things like the split of plastic types because these plastics are almost certainly classified incorrectly. It would be misleading sense to replace these with zeros if interested in plastic types, so instead we likely have to drop these rows to maintain correctness.
+
+
 ## Checkpoint 1
 
 Questions that can be answered with this dataset alone:
@@ -38,4 +49,8 @@ Questions that can be answered with this dataset alone:
  
  - Of countries that produce less of waste, which also have a high recycling rate? Need data on recycling tendencies of countries.
 
+
+Plot Ideas:
+
+![](checkpoint1_plot_ideas.png)
 
