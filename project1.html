@@ -151,7 +151,7 @@ dbl (12): year, empty, hdpe, ldpe, o, pet, pp, ps, pvc, grand_total, num_eve...
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
 </div>
-<p>This dataset comes from global plastic waste cleanup efforts, where volunteers collect and categorize plastic items found in the environment. Each row in data represents a cleanup outcome for a specific country, year (2019 or 2020), and the parent company (whats the source of plastic).</p>
+<p>This dataset comes from global plastic waste cleanup efforts, provided by <em>Break Free from Plastic</em>, where volunteers collect and categorize plastic items found in the environment. The data were cleaned by Sarah Suave, who posted her approach to the data in a blog post. Her goal was to make the data available to raise awareness and contribute to the bigger project of understanding plastic sources in our countries. Each row in data represents a cleanup outcome for a specific country, year (2019 or 2020), and the parent company (whats the source of plastic).</p>
 <p>The data records counts of different types of plastic materials collected, including plastic type such as HDPE (High density polyethylene count), LDPE (Low density), Polyester (PET), polypropylene, polystyrene, PVC and other. The resulting total number of plastic items is stored in a separate column and is the sum of the number of plastic items in each type.</p>
 <p>With this dataset, we are able to look and study how plastic waste varies by geography, material type and source company across a two year period.</p>
 <p>The data was cleaned by first combining multiple country-level CSV files for each year into a single dataset using row-binding. Column types were explicitly specified to ensure consistency across files, with categorical variables stored as character and count variables as numeric. A year variable was added to distinguish observations from 2019 and 2020. The grand total variable was converted from character to numeric using a parsing function, parse_number(), to remove punctuation. Names were also converted to lowercase. The 2019 data required additional cleaning to resolve inconsistencies, including extracting country names from file names, renaming variables to match the 2020 structure, and combining duplicated columns (e.g., pp and pp_2, ps and ps_2). After merging duplicate columns, the redundant variables were removed. These steps resulted in a unified dataset with consistent structure across both years.</p>
@@ -167,9 +167,23 @@ dbl (12): year, empty, hdpe, ldpe, o, pet, pp, ps, pvc, grand_total, num_eve...
 <ul>
 <li><p>Which countries produce the most plastic waste per capita? How does a country’s GDP relate their plastic waste production? Requires descriptive data on countries.</p></li>
 <li><p>Of countries that produce less of waste, which also have a high recycling rate? Need data on recycling tendencies of countries.</p></li>
+<li><p>Is plastic pollution associated with product sales? Need access to company’s sales for each country.</p></li>
 </ul>
-<p>Plot Ideas:</p>
-<p><img src="checkpoint1_plot_ideas.png" class="img-fluid"></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="st">"checkpoint1_plot_ideas.png"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-plots" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-plots-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="checkpoint1_plot_ideas.png" class="img-fluid figure-img" width="1382">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-plots-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Left plot answers the question about plastic waste per capita, with the additional possibility for analysis by region. Right plot answers the question about which type of plastic dominates waste.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
 </section>
 
 </main>

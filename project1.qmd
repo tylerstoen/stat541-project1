@@ -24,7 +24,7 @@ plastics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/t
 
 ```
 
-This dataset comes from global plastic waste cleanup efforts, where volunteers collect and categorize plastic items found in the environment. Each row in data represents a cleanup outcome for a specific country, year (2019 or 2020), and the parent company (whats the source of plastic).
+This dataset comes from global plastic waste cleanup efforts, provided by *Break Free from Plastic*, where volunteers collect and categorize plastic items found in the environment. The data were cleaned by Sarah Suave, who posted her approach to the data in a blog post. Her goal was to make the data available to raise awareness and contribute to the bigger project of understanding plastic sources in our countries. Each row in data represents a cleanup outcome for a specific country, year (2019 or 2020), and the parent company (whats the source of plastic).
 
 The data records counts of different types of plastic materials collected, including plastic type such as HDPE (High density polyethylene count), LDPE (Low density), Polyester (PET), polypropylene, polystyrene, PVC and other. The resulting total number of plastic items is stored in a separate column and is the sum of the number of plastic items in each type.
 
@@ -49,8 +49,14 @@ Questions that can be answered with this dataset alone:
  
  - Of countries that produce less of waste, which also have a high recycling rate? Need data on recycling tendencies of countries.
 
+- Is plastic pollution associated with product sales? Need access to company's sales for each country.
 
-Plot Ideas:
 
-![](checkpoint1_plot_ideas.png)
+```{r}
+#| label: fig-plots
+#| fig-cap: "Left plot answers the question about plastic waste per capita, with the additional possibility for analysis by region. Right plot answers the question about which type of plastic dominates waste."
+
+knitr::include_graphics("checkpoint1_plot_ideas.png")
+```
+
 
