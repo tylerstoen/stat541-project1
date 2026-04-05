@@ -1,7 +1,9 @@
 ---
-title: "Project 1"
-author: "Tyler Stoen"
-format: html
+title: "Project 1: Checkpoint 1"
+author: "Tyler Stoen & Faran Igani"
+format: 
+  html:
+    embed-resources: true
 ---
 
 ```{r}
