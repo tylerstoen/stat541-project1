@@ -66,28 +66,8 @@ library(tidyverse)
 library(gt)
 ```
 
-Doesn't Modify Existing Columns, uses iteration? / map.
-
-```{r}
-top_company_by_country <- function(ctry) {
-  plastics |>
-    filter(country == ctry) |>
-    filter(!is.na(parent_company),
-           !(parent_company %in% c("Grand Total", "null", "Unbranded"))) |>
-    group_by(parent_company) |>
-    summarise(total = sum(grand_total, na.rm = TRUE)) |>
-    slice_max(total, n = 1) |>
-    mutate(country = ctry)
-}
-
-countries <- plastics |> distinct(country) |> pull(country)
-
-countries |>
-  map(top_company_by_country) |>
-  list_rbind()
-```
-
 Modify Existing Columns (New column), No iteration, No custom function
+
 ```{r}
 plastics %>% 
   group_by(country) %>% 
@@ -97,8 +77,68 @@ plastics %>%
     total_waste = sum(grand_total, na.rm = TRUE)
   ) %>% 
   mutate(prop_polyethylene = (total_hdpe + total_ldpe) / total_waste) %>% 
-  gt()
+  select(country, prop_polyethylene) %>% 
+  gt() %>% 
+  cols_label(
+    country            = "Country",
+    prop_polyethylene  = "Percent"
+  ) %>% 
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>% 
+  fmt_percent(columns = prop_polyethylene, decimals = 2) %>% 
+  tab_caption(
+    caption = md("Table 1: Percent of Total Recorded Waste that is Polyethylene.")
+  )
 ```
+
+Doesn't Modify Existing Columns, uses iteration? / map.
+
+```{r}
+top_company_by_country <- function(ctry) {
+  clean <- plastics %>% 
+    filter(country == ctry) %>% 
+    filter(!is.na(parent_company),
+           !(parent_company %in% c("Grand Total", "null", "Unbranded")))
+  
+  country_total <- clean %>% 
+  summarise(total = sum(grand_total, na.rm = TRUE)) %>% 
+  pull(total)
+  
+  clean %>% 
+    group_by(parent_company) %>% 
+    summarise(total = sum(grand_total, na.rm = TRUE)) %>% 
+    slice_max(total, n = 1) %>% 
+    mutate(country = ctry,
+           percent = total / country_total)
+}
+
+countries <- plastics %>% 
+  distinct(country) %>%
+  pull(country)
+
+countries %>% 
+  map(top_company_by_country) %>% 
+  list_rbind() %>% 
+  select(country, parent_company, percent) %>% 
+  gt() %>% 
+  cols_label(
+    country        = "Country",
+    parent_company = "Parent Company",
+    percent        = "Percent"
+  ) %>% 
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>% 
+  fmt_percent(columns = percent, decimals = 2) %>% 
+  tab_caption(
+    caption = md("Table 2: Parent Company that Contributes 
+                 the Most Recorded Waste in Each Country")
+  )
+```
+
 
 
 
