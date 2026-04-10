@@ -108,7 +108,12 @@ top_countries %>%
              "pvc" ~ "PVC")
   ) %>% 
   gt() %>%
-  tab_header(title = "Dominant Plastic Type Recorded in Top 10 Waste-Producing Countries") %>%
+  tab_header(
+    title = md("**Table 2: Dominant Plastic Type in Top 10 Waste-Producing Countries**")
+    ) %>%
+  tab_caption(
+    caption = md("Most commonly recorded plastic type for the countries producing the largest amount of plastic waste.")
+  ) %>% 
   cols_label(
     country       = "Country",
     dominant_type = "Dominant Plastic Type",
@@ -121,37 +126,7 @@ top_countries %>%
   fmt_number(columns = dominant_n, decimals = 0)
 ```
 
-
-Modify Existing Columns (New column), No iteration, No custom function
-
-```{r}
-plastics %>% 
-  filter(country != "EMPTY") %>% 
-  mutate(country = str_to_title(country)) %>% 
-  group_by(country) %>% 
-  summarize(
-    total_hdpe = sum(hdpe, na.rm = TRUE),
-    total_ldpe = sum(ldpe, na.rm = TRUE),
-    total_waste = sum(grand_total, na.rm = TRUE)
-  ) %>% 
-  mutate(prop_polyethylene = (total_hdpe + total_ldpe) / total_waste) %>% 
-  select(country, prop_polyethylene) %>% 
-  gt() %>% 
-  cols_label(
-    country            = "Country",
-    prop_polyethylene  = "Percent"
-  ) %>% 
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_column_labels()
-  ) %>% 
-  fmt_percent(columns = prop_polyethylene, decimals = 2) %>% 
-  tab_caption(
-    caption = md("Table 1: Percent of Total Recorded Waste that is Polyethylene.")
-  )
-```
-
-Modifies Existing Columns, uses iteration.
+Modifies Existing Columns, uses iteration, custom function.
 
 ```{r}
 top_company_by_country <- function(ctry) {
@@ -173,12 +148,14 @@ top_company_by_country <- function(ctry) {
 }
 
 countries <- plastics %>% 
+  filter(country != "EMPTY") %>% 
   distinct(country) %>%
   pull(country)
 
 countries %>% 
   map(top_company_by_country) %>% 
   list_rbind() %>% 
+  filter(!is.nan(percent)) %>%
   select(country, parent_company, percent) %>% 
   gt() %>% 
   cols_label(
@@ -191,12 +168,41 @@ countries %>%
     locations = cells_column_labels()
   ) %>% 
   fmt_percent(columns = percent, decimals = 2) %>% 
+  tab_header(
+    title = md("**Table 4: Company Contributing
+                 the Most Recorded Waste by Country**")
+  ) %>% 
   tab_caption(
-    caption = md("Table 2: Parent Company that Contributes 
-                 the Most Recorded Waste in Each Country")
+    caption= md("Parent company with the largest number of recorded waste items in each country.")
   )
 ```
 
-
+```{r}
+## EXTRA TABLE
+# plastics %>% 
+#   filter(country != "EMPTY") %>% 
+#   mutate(country = str_to_title(country)) %>% 
+#   group_by(country) %>% 
+#   summarize(
+#     total_hdpe = sum(hdpe, na.rm = TRUE),
+#     total_ldpe = sum(ldpe, na.rm = TRUE),
+#     total_waste = sum(grand_total, na.rm = TRUE)
+#   ) %>% 
+#   mutate(prop_polyethylene = (total_hdpe + total_ldpe) / total_waste) %>% 
+#   select(country, prop_polyethylene) %>% 
+#   gt() %>% 
+#   cols_label(
+#     country            = "Country",
+#     prop_polyethylene  = "Percent"
+#   ) %>% 
+#   tab_style(
+#     style = cell_text(weight = "bold"),
+#     locations = cells_column_labels()
+#   ) %>% 
+#   fmt_percent(columns = prop_polyethylene, decimals = 2) %>% 
+#   tab_caption(
+#     caption = md("Table 1: Percent of Total Recorded Waste that is Polyethylene.")
+#   )
+```
 
 
