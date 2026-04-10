@@ -49,7 +49,7 @@ Questions that can be answered with this dataset alone:
  
  - Which countries produce the most plastic waste per capita? How does a country's GDP relate their plastic waste production? Requires descriptive data on countries.
  
- - Of countries that produce less of waste, which also have a high recycling rate? Need data on recycling tendencies of countries.
+ - Of countries that produce less waste, which also have a high recycling rate? Need data on recycling tendencies of countries.
 
 - Is plastic pollution associated with product sales? Need access to company's sales for each country.
 
@@ -66,10 +66,68 @@ library(tidyverse)
 library(gt)
 ```
 
+Doesn't Modify Existing Columns, has iteration and custom function
+
+```{r}
+plastic_types <- c("hdpe", "ldpe", "o", "pet", "pp", "ps", "pvc")
+
+dominant_plastic <- function(ctry) {
+  df <- plastics %>%
+    filter(country != "EMPTY") %>%
+    mutate(country = str_to_title(country)) %>%   # match the casing
+    filter(country == ctry) %>%
+    summarise(across(all_of(plastic_types), ~ sum(.x, na.rm = TRUE)))
+  
+  tibble(
+    country       = ctry,
+    dominant_type = plastic_types[which.max(df)],
+    dominant_n    = max(df)
+  )
+}
+
+top_countries <- plastics %>%
+  filter(country != "EMPTY") %>% 
+  mutate(country = str_to_title(country)) %>% 
+  group_by(country) %>%
+  summarise(total = sum(grand_total, na.rm = TRUE)) %>%
+  slice_max(total, n = 10) %>%
+  pull(country)
+
+top_countries %>%
+  map(dominant_plastic) %>%
+  list_rbind() %>%
+  arrange(desc(dominant_n)) %>%
+  mutate(dominant_type = dominant_type %>% 
+           recode_values(
+             "o" ~ "Other", 
+             "ldpe" ~ "Low-Density Polyethylene",
+             "hdpe" ~ "High-Density Polyethylene",
+             "pet" ~ "Polyester",
+             "pp" ~ "Polypropylene",
+             "ps" ~ "Polystyrene",
+             "pvc" ~ "PVC")
+  ) %>% 
+  gt() %>%
+  tab_header(title = "Dominant Plastic Type Recorded in Top 10 Waste-Producing Countries") %>%
+  cols_label(
+    country       = "Country",
+    dominant_type = "Dominant Plastic Type",
+    dominant_n    = "Amount of Dominant Plastic"
+  ) %>%
+  tab_style(
+    style     = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>%
+  fmt_number(columns = dominant_n, decimals = 0)
+```
+
+
 Modify Existing Columns (New column), No iteration, No custom function
 
 ```{r}
 plastics %>% 
+  filter(country != "EMPTY") %>% 
+  mutate(country = str_to_title(country)) %>% 
   group_by(country) %>% 
   summarize(
     total_hdpe = sum(hdpe, na.rm = TRUE),
@@ -93,7 +151,7 @@ plastics %>%
   )
 ```
 
-Doesn't Modify Existing Columns, uses iteration? / map.
+Modifies Existing Columns, uses iteration.
 
 ```{r}
 top_company_by_country <- function(ctry) {
