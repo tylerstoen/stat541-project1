@@ -66,6 +66,56 @@ library(tidyverse)
 library(gt)
 ```
 
+## Table 1
+
+```{r}
+#| label: Unmodified custom function
+summarize_effort <- function(data) {
+  data %>%
+    group_by(year) %>%
+    summarise(
+        avg_grand_total = round(mean(grand_total, na.rm = TRUE), 3),
+        avg_num_events = round(mean(num_events, na.rm = TRUE), 3),
+        avg_volunteers = round(mean(volunteers, na.rm = TRUE), 3),
+      .groups = "drop"
+    )
+}
+
+summary_existing_1 <- summarize_effort(plastics)
+
+colnames(summary_existing_1) <- c("Year", "Avg Total Plastic", "Avg Events", "Avg Volunteers")
+
+```
+
+```{r}
+#| label: table1 w/ gt
+
+table1 <- summary_existing_1 |>
+  gt()
+
+table1 <- table1 |>
+  cols_label(
+    Year = md("**Year**"),
+    `Avg Total Plastic` = md("**Avg Total Plastic**"),
+    `Avg Events` = md("**Avg Events**"),
+    `Avg Volunteers` = md("**Avg Volunteers**")
+  ) |>
+  fmt_number(
+    columns = c(`Avg Total Plastic`, `Avg Events`, `Avg Volunteers`),
+    decimals = 2
+  ) |>
+  tab_header(
+    title = md("**Table 1: Summary of Cleanup Effort by Year**")
+  ) |>
+  tab_source_note(
+    source_note = "Average total plastic collected, number of events, and volunteers by year."
+  )
+
+table1
+```
+
+## Table 2
+
 Doesn't Modify Existing Columns, has iteration and custom function
 
 ```{r}
@@ -126,7 +176,69 @@ top_countries %>%
   fmt_number(columns = dominant_n, decimals = 0)
 ```
 
-Modifies Existing Columns, uses iteration, custom function.
+## Table 3
+
+```{r}
+#| label: Modified custom function
+plastic_props_year <- function(data) {
+  
+  data %>%
+    filter(grand_total > 0, parent_company != "Grand Total") %>%
+    group_by(year) %>%
+    summarise(
+      empty_prop = sum(empty, na.rm = TRUE) / sum(grand_total, na.rm = TRUE),
+      hdpe_prop  = sum(hdpe,  na.rm = TRUE) / sum(grand_total, na.rm = TRUE),
+      ldpe_prop  = sum(ldpe,  na.rm = TRUE) / sum(grand_total, na.rm = TRUE),
+      other_prop = sum(o,     na.rm = TRUE) / sum(grand_total, na.rm = TRUE),
+      pet_prop   = sum(pet,   na.rm = TRUE) / sum(grand_total, na.rm = TRUE),
+      pp_prop    = sum(pp,    na.rm = TRUE) / sum(grand_total, na.rm = TRUE),
+      ps_prop    = sum(ps,    na.rm = TRUE) / sum(grand_total, na.rm = TRUE),
+      pvc_prop   = sum(pvc,   na.rm = TRUE) / sum(grand_total, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    rename(Year = year)
+}
+
+table3_year <- plastic_props_year(plastics)
+```
+
+```{r}
+#| label: table3 w/ gt
+
+table3 <- table3_year |>
+  gt()
+
+table3 <- table3 |>
+  cols_label(
+    Year = md("**Year**"),
+    empty_prop = md("**Empty (%)**"),
+    hdpe_prop  = md("**HDPE (%)**"),
+    ldpe_prop  = md("**LDPE (%)**"),
+    other_prop = md("**Other (%)**"),
+    pet_prop   = md("**PET (%)**"),
+    pp_prop    = md("**PP (%)**"),
+    ps_prop    = md("**PS (%)**"),
+    pvc_prop   = md("**PVC (%)**")
+  ) |>
+  fmt_percent(
+    columns = c(empty_prop, hdpe_prop, ldpe_prop, other_prop,
+                pet_prop, pp_prop, ps_prop, pvc_prop),
+    decimals = 1
+  ) |>
+  tab_header(
+    title = md("**Table 3: Proportion of Each Plastic Type by Year**")
+  ) |>
+  tab_source_note(
+    source_note = "Percentages of each plastic type as a percentage of total plastic collected, by year."
+  )
+
+table3
+
+```
+
+## Table 4
+
+Modifies columns, uses iteration, uses custom function.
 
 ```{r}
 top_company_by_country <- function(ctry) {
@@ -173,11 +285,13 @@ countries %>%
                  the Most Recorded Waste by Country**")
   ) %>% 
   tab_caption(
-    caption= md("Parent company with the largest number of recorded waste items in each country.")
+    caption = md("Parent company with the largest number of recorded waste items in each country.")
   )
 ```
 
 ```{r}
+#| include: FALSE
+
 ## EXTRA TABLE
 # plastics %>% 
 #   filter(country != "EMPTY") %>% 

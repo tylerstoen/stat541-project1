@@ -2291,7 +2291,7 @@ dbl (12): year, empty, hdpe, ldpe, o, pet, pp, ps, pvc, grand_total, num_eve...
 <p>Questions that need outside data:</p>
 <ul>
 <li><p>Which countries produce the most plastic waste per capita? How does a country’s GDP relate their plastic waste production? Requires descriptive data on countries.</p></li>
-<li><p>Of countries that produce less of waste, which also have a high recycling rate? Need data on recycling tendencies of countries.</p></li>
+<li><p>Of countries that produce less waste, which also have a high recycling rate? Need data on recycling tendencies of countries.</p></li>
 <li><p>Is plastic pollution associated with product sales? Need access to company’s sales for each country.</p></li>
 </ul>
 <div class="cell">
@@ -2306,6 +2306,2326 @@ dbl (12): year, empty, hdpe, ldpe, o, pet, pp, ps, pvc, grand_total, num_eve...
 Figure 1: Left plot answers the question about plastic waste per capita, with the additional possibility for analysis by region. Right plot answers the question about which type of plastic dominates waste.
 </figcaption>
 </figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.2.0     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.2     ✔ tibble    3.2.1
+✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+✔ purrr     1.0.4     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gt)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="table-1" class="level2">
+<h2 class="anchored" data-anchor-id="table-1">Table 1</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>summarize_effort <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  data <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">avg_grand_total =</span> <span class="fu">round</span>(<span class="fu">mean</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">avg_num_events =</span> <span class="fu">round</span>(<span class="fu">mean</span>(num_events, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">avg_volunteers =</span> <span class="fu">round</span>(<span class="fu">mean</span>(volunteers, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>summary_existing_1 <span class="ot">&lt;-</span> <span class="fu">summarize_effort</span>(plastics)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(summary_existing_1) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Year&quot;</span>, <span class="st">&quot;Avg Total Plastic&quot;</span>, <span class="st">&quot;Avg Events&quot;</span>, <span class="st">&quot;Avg Volunteers&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>table1 <span class="ot">&lt;-</span> summary_existing_1 <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>()</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>table1 <span class="ot">&lt;-</span> table1 <span class="sc">|&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_label</span>(</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Year =</span> <span class="fu">md</span>(<span class="st">&quot;**Year**&quot;</span>),</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Avg Total Plastic</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">md</span>(<span class="st">&quot;**Avg Total Plastic**&quot;</span>),</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Avg Events</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">md</span>(<span class="st">&quot;**Avg Events**&quot;</span>),</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Avg Volunteers</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">md</span>(<span class="st">&quot;**Avg Volunteers**&quot;</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_number</span>(</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">c</span>(<span class="st">`</span><span class="at">Avg Total Plastic</span><span class="st">`</span>, <span class="st">`</span><span class="at">Avg Events</span><span class="st">`</span>, <span class="st">`</span><span class="at">Avg Volunteers</span><span class="st">`</span>),</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">decimals =</span> <span class="dv">2</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_header</span>(</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="fu">md</span>(<span class="st">&quot;**Table 1: Summary of Cleanup Effort by Year**&quot;</span>)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_source_note</span>(</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">source_note =</span> <span class="st">&quot;Average total plastic collected, number of events, and volunteers by year.&quot;</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>table1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="vmmuocjbzw" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#vmmuocjbzw table {
+font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+#vmmuocjbzw thead, #vmmuocjbzw tbody, #vmmuocjbzw tfoot, #vmmuocjbzw tr, #vmmuocjbzw td, #vmmuocjbzw th {
+border-style: none;
+}
+#vmmuocjbzw p {
+margin: 0;
+padding: 0;
+}
+#vmmuocjbzw .gt_table {
+display: table;
+border-collapse: collapse;
+line-height: normal;
+margin-left: auto;
+margin-right: auto;
+color: #333333;
+font-size: 16px;
+font-weight: normal;
+font-style: normal;
+background-color: #FFFFFF;
+width: auto;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #A8A8A8;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #A8A8A8;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_caption {
+padding-top: 4px;
+padding-bottom: 4px;
+}
+#vmmuocjbzw .gt_title {
+color: #333333;
+font-size: 125%;
+font-weight: initial;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-color: #FFFFFF;
+border-bottom-width: 0;
+}
+#vmmuocjbzw .gt_subtitle {
+color: #333333;
+font-size: 85%;
+font-weight: initial;
+padding-top: 3px;
+padding-bottom: 5px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-color: #FFFFFF;
+border-top-width: 0;
+}
+#vmmuocjbzw .gt_heading {
+background-color: #FFFFFF;
+text-align: center;
+border-bottom-color: #FFFFFF;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_bottom_border {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_col_headings {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_col_heading {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 6px;
+padding-left: 5px;
+padding-right: 5px;
+overflow-x: hidden;
+}
+#vmmuocjbzw .gt_column_spanner_outer {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+padding-top: 0;
+padding-bottom: 0;
+padding-left: 4px;
+padding-right: 4px;
+}
+#vmmuocjbzw .gt_column_spanner_outer:first-child {
+padding-left: 0;
+}
+#vmmuocjbzw .gt_column_spanner_outer:last-child {
+padding-right: 0;
+}
+#vmmuocjbzw .gt_column_spanner {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 5px;
+overflow-x: hidden;
+display: inline-block;
+width: 100%;
+}
+#vmmuocjbzw .gt_spanner_row {
+border-bottom-style: hidden;
+}
+#vmmuocjbzw .gt_group_heading {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+text-align: left;
+}
+#vmmuocjbzw .gt_empty_group_heading {
+padding: 0.5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: middle;
+}
+#vmmuocjbzw .gt_from_md > :first-child {
+margin-top: 0;
+}
+#vmmuocjbzw .gt_from_md > :last-child {
+margin-bottom: 0;
+}
+#vmmuocjbzw .gt_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+margin: 10px;
+border-top-style: solid;
+border-top-width: 1px;
+border-top-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+overflow-x: hidden;
+}
+#vmmuocjbzw .gt_stub {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+}
+#vmmuocjbzw .gt_stub_row_group {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+vertical-align: top;
+}
+#vmmuocjbzw .gt_row_group_first td {
+border-top-width: 2px;
+}
+#vmmuocjbzw .gt_row_group_first th {
+border-top-width: 2px;
+}
+#vmmuocjbzw .gt_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#vmmuocjbzw .gt_first_summary_row {
+border-top-style: solid;
+border-top-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_first_summary_row.thick {
+border-top-width: 2px;
+}
+#vmmuocjbzw .gt_last_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_grand_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#vmmuocjbzw .gt_first_grand_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-style: double;
+border-top-width: 6px;
+border-top-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_last_grand_summary_row_top {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: double;
+border-bottom-width: 6px;
+border-bottom-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_striped {
+background-color: rgba(128, 128, 128, 0.05);
+}
+#vmmuocjbzw .gt_table_body {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_footnotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_footnote {
+margin: 0px;
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#vmmuocjbzw .gt_sourcenotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#vmmuocjbzw .gt_sourcenote {
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#vmmuocjbzw .gt_left {
+text-align: left;
+}
+#vmmuocjbzw .gt_center {
+text-align: center;
+}
+#vmmuocjbzw .gt_right {
+text-align: right;
+font-variant-numeric: tabular-nums;
+}
+#vmmuocjbzw .gt_font_normal {
+font-weight: normal;
+}
+#vmmuocjbzw .gt_font_bold {
+font-weight: bold;
+}
+#vmmuocjbzw .gt_font_italic {
+font-style: italic;
+}
+#vmmuocjbzw .gt_super {
+font-size: 65%;
+}
+#vmmuocjbzw .gt_footnote_marks {
+font-size: 75%;
+vertical-align: 0.4em;
+position: initial;
+}
+#vmmuocjbzw .gt_asterisk {
+font-size: 100%;
+vertical-align: 0;
+}
+#vmmuocjbzw .gt_indent_1 {
+text-indent: 5px;
+}
+#vmmuocjbzw .gt_indent_2 {
+text-indent: 10px;
+}
+#vmmuocjbzw .gt_indent_3 {
+text-indent: 15px;
+}
+#vmmuocjbzw .gt_indent_4 {
+text-indent: 20px;
+}
+#vmmuocjbzw .gt_indent_5 {
+text-indent: 25px;
+}
+#vmmuocjbzw .katex-display {
+display: inline-flex !important;
+margin-bottom: 0.75em !important;
+}
+#vmmuocjbzw div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_heading header">
+<td colspan="4" class="gt_heading gt_title gt_font_normal gt_bottom_border"><strong>Table 1: Summary of Cleanup Effort by Year</strong></td>
+</tr>
+<tr class="gt_col_headings even">
+<th id="Year" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>Year</strong></th>
+<th id="Avg-Total-Plastic" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>Avg Total Plastic</strong></th>
+<th id="Avg-Events" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>Avg Events</strong></th>
+<th id="Avg-Volunteers" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>Avg Volunteers</strong></th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="Year">2019</td>
+<td class="gt_row gt_right" headers="Avg Total Plastic">92.35</td>
+<td class="gt_row gt_right" headers="Avg Events">34.73</td>
+<td class="gt_row gt_right" headers="Avg Volunteers">1,367.33</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="Year">2020</td>
+<td class="gt_row gt_right" headers="Avg Total Plastic">85.13</td>
+<td class="gt_row gt_right" headers="Avg Events">30.26</td>
+<td class="gt_row gt_right" headers="Avg Volunteers">534.03</td>
+</tr>
+</tbody><tfoot>
+<tr class="gt_sourcenotes odd">
+<td colspan="4" class="gt_sourcenote">Average total plastic collected, number of events, and volunteers by year.</td>
+</tr>
+</tfoot>
+
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="table-2" class="level2">
+<h2 class="anchored" data-anchor-id="table-2">Table 2</h2>
+<p>Doesn’t Modify Existing Columns, has iteration and custom function</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>plastic_types <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;hdpe&quot;</span>, <span class="st">&quot;ldpe&quot;</span>, <span class="st">&quot;o&quot;</span>, <span class="st">&quot;pet&quot;</span>, <span class="st">&quot;pp&quot;</span>, <span class="st">&quot;ps&quot;</span>, <span class="st">&quot;pvc&quot;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>dominant_plastic <span class="ot">&lt;-</span> <span class="cf">function</span>(ctry) {</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> plastics <span class="sc">%&gt;%</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(country <span class="sc">!=</span> <span class="st">&quot;EMPTY&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">country =</span> <span class="fu">str_to_title</span>(country)) <span class="sc">%&gt;%</span>   <span class="co"># match the casing</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(country <span class="sc">==</span> ctry) <span class="sc">%&gt;%</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(plastic_types), <span class="sc">~</span> <span class="fu">sum</span>(.x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)))</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">country       =</span> ctry,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">dominant_type =</span> plastic_types[<span class="fu">which.max</span>(df)],</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">dominant_n    =</span> <span class="fu">max</span>(df)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>top_countries <span class="ot">&lt;-</span> plastics <span class="sc">%&gt;%</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(country <span class="sc">!=</span> <span class="st">&quot;EMPTY&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">country =</span> <span class="fu">str_to_title</span>(country)) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(country) <span class="sc">%&gt;%</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(total, <span class="at">n =</span> <span class="dv">10</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(country)</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>top_countries <span class="sc">%&gt;%</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(dominant_plastic) <span class="sc">%&gt;%</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list_rbind</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(dominant_n)) <span class="sc">%&gt;%</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dominant_type =</span> dominant_type <span class="sc">%&gt;%</span> </span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>           <span class="fu">recode_values</span>(</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>             <span class="st">&quot;o&quot;</span> <span class="sc">~</span> <span class="st">&quot;Other&quot;</span>, </span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>             <span class="st">&quot;ldpe&quot;</span> <span class="sc">~</span> <span class="st">&quot;Low-Density Polyethylene&quot;</span>,</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>             <span class="st">&quot;hdpe&quot;</span> <span class="sc">~</span> <span class="st">&quot;High-Density Polyethylene&quot;</span>,</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>             <span class="st">&quot;pet&quot;</span> <span class="sc">~</span> <span class="st">&quot;Polyester&quot;</span>,</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>             <span class="st">&quot;pp&quot;</span> <span class="sc">~</span> <span class="st">&quot;Polypropylene&quot;</span>,</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>             <span class="st">&quot;ps&quot;</span> <span class="sc">~</span> <span class="st">&quot;Polystyrene&quot;</span>,</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>             <span class="st">&quot;pvc&quot;</span> <span class="sc">~</span> <span class="st">&quot;PVC&quot;</span>)</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_header</span>(</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="fu">md</span>(<span class="st">&quot;**Table 2: Dominant Plastic Type in Top 10 Waste-Producing Countries**&quot;</span>)</span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_caption</span>(</span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="fu">md</span>(<span class="st">&quot;Most commonly recorded plastic type for the countries producing the largest amount of plastic waste.&quot;</span>)</span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_label</span>(</span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">country       =</span> <span class="st">&quot;Country&quot;</span>,</span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">dominant_type =</span> <span class="st">&quot;Dominant Plastic Type&quot;</span>,</span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">dominant_n    =</span> <span class="st">&quot;Amount of Dominant Plastic&quot;</span></span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_style</span>(</span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">style     =</span> <span class="fu">cell_text</span>(<span class="at">weight =</span> <span class="st">&quot;bold&quot;</span>),</span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>    <span class="at">locations =</span> <span class="fu">cells_column_labels</span>()</span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_number</span>(<span class="at">columns =</span> dominant_n, <span class="at">decimals =</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="zpgevlyfpg" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#zpgevlyfpg table {
+font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+#zpgevlyfpg thead, #zpgevlyfpg tbody, #zpgevlyfpg tfoot, #zpgevlyfpg tr, #zpgevlyfpg td, #zpgevlyfpg th {
+border-style: none;
+}
+#zpgevlyfpg p {
+margin: 0;
+padding: 0;
+}
+#zpgevlyfpg .gt_table {
+display: table;
+border-collapse: collapse;
+line-height: normal;
+margin-left: auto;
+margin-right: auto;
+color: #333333;
+font-size: 16px;
+font-weight: normal;
+font-style: normal;
+background-color: #FFFFFF;
+width: auto;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #A8A8A8;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #A8A8A8;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_caption {
+padding-top: 4px;
+padding-bottom: 4px;
+}
+#zpgevlyfpg .gt_title {
+color: #333333;
+font-size: 125%;
+font-weight: initial;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-color: #FFFFFF;
+border-bottom-width: 0;
+}
+#zpgevlyfpg .gt_subtitle {
+color: #333333;
+font-size: 85%;
+font-weight: initial;
+padding-top: 3px;
+padding-bottom: 5px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-color: #FFFFFF;
+border-top-width: 0;
+}
+#zpgevlyfpg .gt_heading {
+background-color: #FFFFFF;
+text-align: center;
+border-bottom-color: #FFFFFF;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_bottom_border {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_col_headings {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_col_heading {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 6px;
+padding-left: 5px;
+padding-right: 5px;
+overflow-x: hidden;
+}
+#zpgevlyfpg .gt_column_spanner_outer {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+padding-top: 0;
+padding-bottom: 0;
+padding-left: 4px;
+padding-right: 4px;
+}
+#zpgevlyfpg .gt_column_spanner_outer:first-child {
+padding-left: 0;
+}
+#zpgevlyfpg .gt_column_spanner_outer:last-child {
+padding-right: 0;
+}
+#zpgevlyfpg .gt_column_spanner {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 5px;
+overflow-x: hidden;
+display: inline-block;
+width: 100%;
+}
+#zpgevlyfpg .gt_spanner_row {
+border-bottom-style: hidden;
+}
+#zpgevlyfpg .gt_group_heading {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+text-align: left;
+}
+#zpgevlyfpg .gt_empty_group_heading {
+padding: 0.5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: middle;
+}
+#zpgevlyfpg .gt_from_md > :first-child {
+margin-top: 0;
+}
+#zpgevlyfpg .gt_from_md > :last-child {
+margin-bottom: 0;
+}
+#zpgevlyfpg .gt_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+margin: 10px;
+border-top-style: solid;
+border-top-width: 1px;
+border-top-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+overflow-x: hidden;
+}
+#zpgevlyfpg .gt_stub {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zpgevlyfpg .gt_stub_row_group {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+vertical-align: top;
+}
+#zpgevlyfpg .gt_row_group_first td {
+border-top-width: 2px;
+}
+#zpgevlyfpg .gt_row_group_first th {
+border-top-width: 2px;
+}
+#zpgevlyfpg .gt_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zpgevlyfpg .gt_first_summary_row {
+border-top-style: solid;
+border-top-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_first_summary_row.thick {
+border-top-width: 2px;
+}
+#zpgevlyfpg .gt_last_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_grand_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zpgevlyfpg .gt_first_grand_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-style: double;
+border-top-width: 6px;
+border-top-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_last_grand_summary_row_top {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: double;
+border-bottom-width: 6px;
+border-bottom-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_striped {
+background-color: rgba(128, 128, 128, 0.05);
+}
+#zpgevlyfpg .gt_table_body {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_footnotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_footnote {
+margin: 0px;
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zpgevlyfpg .gt_sourcenotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#zpgevlyfpg .gt_sourcenote {
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zpgevlyfpg .gt_left {
+text-align: left;
+}
+#zpgevlyfpg .gt_center {
+text-align: center;
+}
+#zpgevlyfpg .gt_right {
+text-align: right;
+font-variant-numeric: tabular-nums;
+}
+#zpgevlyfpg .gt_font_normal {
+font-weight: normal;
+}
+#zpgevlyfpg .gt_font_bold {
+font-weight: bold;
+}
+#zpgevlyfpg .gt_font_italic {
+font-style: italic;
+}
+#zpgevlyfpg .gt_super {
+font-size: 65%;
+}
+#zpgevlyfpg .gt_footnote_marks {
+font-size: 75%;
+vertical-align: 0.4em;
+position: initial;
+}
+#zpgevlyfpg .gt_asterisk {
+font-size: 100%;
+vertical-align: 0;
+}
+#zpgevlyfpg .gt_indent_1 {
+text-indent: 5px;
+}
+#zpgevlyfpg .gt_indent_2 {
+text-indent: 10px;
+}
+#zpgevlyfpg .gt_indent_3 {
+text-indent: 15px;
+}
+#zpgevlyfpg .gt_indent_4 {
+text-indent: 20px;
+}
+#zpgevlyfpg .gt_indent_5 {
+text-indent: 25px;
+}
+#zpgevlyfpg .katex-display {
+display: inline-flex !important;
+margin-bottom: 0.75em !important;
+}
+#zpgevlyfpg div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-bootstrap="false">
+<caption>Most commonly recorded plastic type for the countries producing the largest amount of plastic waste.</caption>
+<thead>
+<tr class="gt_heading header">
+<td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border"><strong>Table 2: Dominant Plastic Type in Top 10 Waste-Producing Countries</strong></td>
+</tr>
+<tr class="gt_col_headings even">
+<th id="country" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" style="font-weight: bold" scope="col">Country</th>
+<th id="dominant_type" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" style="font-weight: bold" scope="col">Dominant Plastic Type</th>
+<th id="dominant_n" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" style="font-weight: bold" scope="col">Amount of Dominant Plastic</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Taiwan_ Republic Of China (Roc)</td>
+<td class="gt_row gt_left" headers="dominant_type">Other</td>
+<td class="gt_row gt_right" headers="dominant_n">241,292</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Nigeria</td>
+<td class="gt_row gt_left" headers="dominant_type">Polyester</td>
+<td class="gt_row gt_right" headers="dominant_n">99,842</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Switzerland</td>
+<td class="gt_row gt_left" headers="dominant_type">Other</td>
+<td class="gt_row gt_right" headers="dominant_n">59,756</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Philippines</td>
+<td class="gt_row gt_left" headers="dominant_type">Polypropylene</td>
+<td class="gt_row gt_right" headers="dominant_n">44,597</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Kenya</td>
+<td class="gt_row gt_left" headers="dominant_type">Polyester</td>
+<td class="gt_row gt_right" headers="dominant_n">25,581</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Ecuador</td>
+<td class="gt_row gt_left" headers="dominant_type">Other</td>
+<td class="gt_row gt_right" headers="dominant_n">22,373</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Vietnam</td>
+<td class="gt_row gt_left" headers="dominant_type">Other</td>
+<td class="gt_row gt_right" headers="dominant_n">14,719</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Indonesia</td>
+<td class="gt_row gt_left" headers="dominant_type">Polyester</td>
+<td class="gt_row gt_right" headers="dominant_n">9,934</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">United States Of America</td>
+<td class="gt_row gt_left" headers="dominant_type">Polypropylene</td>
+<td class="gt_row gt_right" headers="dominant_n">9,339</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">India</td>
+<td class="gt_row gt_left" headers="dominant_type">Other</td>
+<td class="gt_row gt_right" headers="dominant_n">9,339</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="table-3" class="level2">
+<h2 class="anchored" data-anchor-id="table-3">Table 3</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>plastic_props_year <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  data <span class="sc">%&gt;%</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(grand_total <span class="sc">&gt;</span> <span class="dv">0</span>, parent_company <span class="sc">!=</span> <span class="st">&quot;Grand Total&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">empty_prop =</span> <span class="fu">sum</span>(empty, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">hdpe_prop  =</span> <span class="fu">sum</span>(hdpe,  <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">ldpe_prop  =</span> <span class="fu">sum</span>(ldpe,  <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">other_prop =</span> <span class="fu">sum</span>(o,     <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">pet_prop   =</span> <span class="fu">sum</span>(pet,   <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">pp_prop    =</span> <span class="fu">sum</span>(pp,    <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">ps_prop    =</span> <span class="fu">sum</span>(ps,    <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">pvc_prop   =</span> <span class="fu">sum</span>(pvc,   <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(<span class="at">Year =</span> year)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>table3_year <span class="ot">&lt;-</span> <span class="fu">plastic_props_year</span>(plastics)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>table3 <span class="ot">&lt;-</span> table3_year <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>()</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>table3 <span class="ot">&lt;-</span> table3 <span class="sc">|&gt;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_label</span>(</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Year =</span> <span class="fu">md</span>(<span class="st">&quot;**Year**&quot;</span>),</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">empty_prop =</span> <span class="fu">md</span>(<span class="st">&quot;**Empty (%)**&quot;</span>),</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">hdpe_prop  =</span> <span class="fu">md</span>(<span class="st">&quot;**HDPE (%)**&quot;</span>),</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">ldpe_prop  =</span> <span class="fu">md</span>(<span class="st">&quot;**LDPE (%)**&quot;</span>),</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">other_prop =</span> <span class="fu">md</span>(<span class="st">&quot;**Other (%)**&quot;</span>),</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">pet_prop   =</span> <span class="fu">md</span>(<span class="st">&quot;**PET (%)**&quot;</span>),</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">pp_prop    =</span> <span class="fu">md</span>(<span class="st">&quot;**PP (%)**&quot;</span>),</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">ps_prop    =</span> <span class="fu">md</span>(<span class="st">&quot;**PS (%)**&quot;</span>),</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">pvc_prop   =</span> <span class="fu">md</span>(<span class="st">&quot;**PVC (%)**&quot;</span>)</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_percent</span>(</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">c</span>(empty_prop, hdpe_prop, ldpe_prop, other_prop,</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>                pet_prop, pp_prop, ps_prop, pvc_prop),</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">decimals =</span> <span class="dv">1</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_header</span>(</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="fu">md</span>(<span class="st">&quot;**Table 3: Proportion of Each Plastic Type by Year**&quot;</span>)</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_source_note</span>(</span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">source_note =</span> <span class="st">&quot;Percentages of each plastic type as a percentage of total plastic collected, by year.&quot;</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>table3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="jyophphhvm" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#jyophphhvm table {
+font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+#jyophphhvm thead, #jyophphhvm tbody, #jyophphhvm tfoot, #jyophphhvm tr, #jyophphhvm td, #jyophphhvm th {
+border-style: none;
+}
+#jyophphhvm p {
+margin: 0;
+padding: 0;
+}
+#jyophphhvm .gt_table {
+display: table;
+border-collapse: collapse;
+line-height: normal;
+margin-left: auto;
+margin-right: auto;
+color: #333333;
+font-size: 16px;
+font-weight: normal;
+font-style: normal;
+background-color: #FFFFFF;
+width: auto;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #A8A8A8;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #A8A8A8;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+}
+#jyophphhvm .gt_caption {
+padding-top: 4px;
+padding-bottom: 4px;
+}
+#jyophphhvm .gt_title {
+color: #333333;
+font-size: 125%;
+font-weight: initial;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-color: #FFFFFF;
+border-bottom-width: 0;
+}
+#jyophphhvm .gt_subtitle {
+color: #333333;
+font-size: 85%;
+font-weight: initial;
+padding-top: 3px;
+padding-bottom: 5px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-color: #FFFFFF;
+border-top-width: 0;
+}
+#jyophphhvm .gt_heading {
+background-color: #FFFFFF;
+text-align: center;
+border-bottom-color: #FFFFFF;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#jyophphhvm .gt_bottom_border {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#jyophphhvm .gt_col_headings {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#jyophphhvm .gt_col_heading {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 6px;
+padding-left: 5px;
+padding-right: 5px;
+overflow-x: hidden;
+}
+#jyophphhvm .gt_column_spanner_outer {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+padding-top: 0;
+padding-bottom: 0;
+padding-left: 4px;
+padding-right: 4px;
+}
+#jyophphhvm .gt_column_spanner_outer:first-child {
+padding-left: 0;
+}
+#jyophphhvm .gt_column_spanner_outer:last-child {
+padding-right: 0;
+}
+#jyophphhvm .gt_column_spanner {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 5px;
+overflow-x: hidden;
+display: inline-block;
+width: 100%;
+}
+#jyophphhvm .gt_spanner_row {
+border-bottom-style: hidden;
+}
+#jyophphhvm .gt_group_heading {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+text-align: left;
+}
+#jyophphhvm .gt_empty_group_heading {
+padding: 0.5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: middle;
+}
+#jyophphhvm .gt_from_md > :first-child {
+margin-top: 0;
+}
+#jyophphhvm .gt_from_md > :last-child {
+margin-bottom: 0;
+}
+#jyophphhvm .gt_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+margin: 10px;
+border-top-style: solid;
+border-top-width: 1px;
+border-top-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+overflow-x: hidden;
+}
+#jyophphhvm .gt_stub {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+}
+#jyophphhvm .gt_stub_row_group {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+vertical-align: top;
+}
+#jyophphhvm .gt_row_group_first td {
+border-top-width: 2px;
+}
+#jyophphhvm .gt_row_group_first th {
+border-top-width: 2px;
+}
+#jyophphhvm .gt_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#jyophphhvm .gt_first_summary_row {
+border-top-style: solid;
+border-top-color: #D3D3D3;
+}
+#jyophphhvm .gt_first_summary_row.thick {
+border-top-width: 2px;
+}
+#jyophphhvm .gt_last_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#jyophphhvm .gt_grand_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#jyophphhvm .gt_first_grand_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-style: double;
+border-top-width: 6px;
+border-top-color: #D3D3D3;
+}
+#jyophphhvm .gt_last_grand_summary_row_top {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: double;
+border-bottom-width: 6px;
+border-bottom-color: #D3D3D3;
+}
+#jyophphhvm .gt_striped {
+background-color: rgba(128, 128, 128, 0.05);
+}
+#jyophphhvm .gt_table_body {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#jyophphhvm .gt_footnotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#jyophphhvm .gt_footnote {
+margin: 0px;
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#jyophphhvm .gt_sourcenotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#jyophphhvm .gt_sourcenote {
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#jyophphhvm .gt_left {
+text-align: left;
+}
+#jyophphhvm .gt_center {
+text-align: center;
+}
+#jyophphhvm .gt_right {
+text-align: right;
+font-variant-numeric: tabular-nums;
+}
+#jyophphhvm .gt_font_normal {
+font-weight: normal;
+}
+#jyophphhvm .gt_font_bold {
+font-weight: bold;
+}
+#jyophphhvm .gt_font_italic {
+font-style: italic;
+}
+#jyophphhvm .gt_super {
+font-size: 65%;
+}
+#jyophphhvm .gt_footnote_marks {
+font-size: 75%;
+vertical-align: 0.4em;
+position: initial;
+}
+#jyophphhvm .gt_asterisk {
+font-size: 100%;
+vertical-align: 0;
+}
+#jyophphhvm .gt_indent_1 {
+text-indent: 5px;
+}
+#jyophphhvm .gt_indent_2 {
+text-indent: 10px;
+}
+#jyophphhvm .gt_indent_3 {
+text-indent: 15px;
+}
+#jyophphhvm .gt_indent_4 {
+text-indent: 20px;
+}
+#jyophphhvm .gt_indent_5 {
+text-indent: 25px;
+}
+#jyophphhvm .katex-display {
+display: inline-flex !important;
+margin-bottom: 0.75em !important;
+}
+#jyophphhvm div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_heading header">
+<td colspan="9" class="gt_heading gt_title gt_font_normal gt_bottom_border"><strong>Table 3: Proportion of Each Plastic Type by Year</strong></td>
+</tr>
+<tr class="gt_col_headings even">
+<th id="Year" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>Year</strong></th>
+<th id="empty_prop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>Empty (%)</strong></th>
+<th id="hdpe_prop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>HDPE (%)</strong></th>
+<th id="ldpe_prop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>LDPE (%)</strong></th>
+<th id="other_prop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>Other (%)</strong></th>
+<th id="pet_prop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>PET (%)</strong></th>
+<th id="pp_prop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>PP (%)</strong></th>
+<th id="ps_prop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>PS (%)</strong></th>
+<th id="pvc_prop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>PVC (%)</strong></th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="Year">2019</td>
+<td class="gt_row gt_right" headers="empty_prop">0.0%</td>
+<td class="gt_row gt_right" headers="hdpe_prop">2.2%</td>
+<td class="gt_row gt_right" headers="ldpe_prop">9.2%</td>
+<td class="gt_row gt_right" headers="other_prop">60.4%</td>
+<td class="gt_row gt_right" headers="pet_prop">22.6%</td>
+<td class="gt_row gt_right" headers="pp_prop">4.2%</td>
+<td class="gt_row gt_right" headers="ps_prop">1.4%</td>
+<td class="gt_row gt_right" headers="pvc_prop">0.1%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="Year">2020</td>
+<td class="gt_row gt_right" headers="empty_prop">1.2%</td>
+<td class="gt_row gt_right" headers="hdpe_prop">4.9%</td>
+<td class="gt_row gt_right" headers="ldpe_prop">10.8%</td>
+<td class="gt_row gt_right" headers="other_prop">38.2%</td>
+<td class="gt_row gt_right" headers="pet_prop">23.6%</td>
+<td class="gt_row gt_right" headers="pp_prop">17.8%</td>
+<td class="gt_row gt_right" headers="ps_prop">2.7%</td>
+<td class="gt_row gt_right" headers="pvc_prop">0.6%</td>
+</tr>
+</tbody><tfoot>
+<tr class="gt_sourcenotes odd">
+<td colspan="9" class="gt_sourcenote">Percentages of each plastic type as a percentage of total plastic collected, by year.</td>
+</tr>
+</tfoot>
+
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="table-4" class="level2">
+<h2 class="anchored" data-anchor-id="table-4">Table 4</h2>
+<p>Modifies columns, uses iteration, uses custom function.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>top_company_by_country <span class="ot">&lt;-</span> <span class="cf">function</span>(ctry) {</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  clean <span class="ot">&lt;-</span> plastics <span class="sc">%&gt;%</span> </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(country <span class="sc">==</span> ctry) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(parent_company),</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>           <span class="sc">!</span>(parent_company <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Grand Total&quot;</span>, <span class="st">&quot;null&quot;</span>, <span class="st">&quot;Unbranded&quot;</span>)))</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  country_total <span class="ot">&lt;-</span> clean <span class="sc">%&gt;%</span> </span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(total)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  clean <span class="sc">%&gt;%</span> </span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(parent_company) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(grand_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">slice_max</span>(total, <span class="at">n =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">country =</span> ctry,</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>           <span class="at">percent =</span> total <span class="sc">/</span> country_total)</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> plastics <span class="sc">%&gt;%</span> </span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(country <span class="sc">!=</span> <span class="st">&quot;EMPTY&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(country) <span class="sc">%&gt;%</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(country)</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>countries <span class="sc">%&gt;%</span> </span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(top_company_by_country) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list_rbind</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.nan</span>(percent)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(country, parent_company, percent) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_label</span>(</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">country        =</span> <span class="st">&quot;Country&quot;</span>,</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">parent_company =</span> <span class="st">&quot;Parent Company&quot;</span>,</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">percent        =</span> <span class="st">&quot;Percent&quot;</span></span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_style</span>(</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="fu">cell_text</span>(<span class="at">weight =</span> <span class="st">&quot;bold&quot;</span>),</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">locations =</span> <span class="fu">cells_column_labels</span>()</span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_percent</span>(<span class="at">columns =</span> percent, <span class="at">decimals =</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_header</span>(</span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="fu">md</span>(<span class="st">&quot;**Table 4: Company Contributing</span></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a><span class="st">                 the Most Recorded Waste by Country**&quot;</span>)</span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_caption</span>(</span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="fu">md</span>(<span class="st">&quot;Parent company with the largest number of recorded waste items in each country.&quot;</span>)</span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="xuxtfmlled" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#xuxtfmlled table {
+font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+#xuxtfmlled thead, #xuxtfmlled tbody, #xuxtfmlled tfoot, #xuxtfmlled tr, #xuxtfmlled td, #xuxtfmlled th {
+border-style: none;
+}
+#xuxtfmlled p {
+margin: 0;
+padding: 0;
+}
+#xuxtfmlled .gt_table {
+display: table;
+border-collapse: collapse;
+line-height: normal;
+margin-left: auto;
+margin-right: auto;
+color: #333333;
+font-size: 16px;
+font-weight: normal;
+font-style: normal;
+background-color: #FFFFFF;
+width: auto;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #A8A8A8;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #A8A8A8;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+}
+#xuxtfmlled .gt_caption {
+padding-top: 4px;
+padding-bottom: 4px;
+}
+#xuxtfmlled .gt_title {
+color: #333333;
+font-size: 125%;
+font-weight: initial;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-color: #FFFFFF;
+border-bottom-width: 0;
+}
+#xuxtfmlled .gt_subtitle {
+color: #333333;
+font-size: 85%;
+font-weight: initial;
+padding-top: 3px;
+padding-bottom: 5px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-color: #FFFFFF;
+border-top-width: 0;
+}
+#xuxtfmlled .gt_heading {
+background-color: #FFFFFF;
+text-align: center;
+border-bottom-color: #FFFFFF;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#xuxtfmlled .gt_bottom_border {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#xuxtfmlled .gt_col_headings {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#xuxtfmlled .gt_col_heading {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 6px;
+padding-left: 5px;
+padding-right: 5px;
+overflow-x: hidden;
+}
+#xuxtfmlled .gt_column_spanner_outer {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+padding-top: 0;
+padding-bottom: 0;
+padding-left: 4px;
+padding-right: 4px;
+}
+#xuxtfmlled .gt_column_spanner_outer:first-child {
+padding-left: 0;
+}
+#xuxtfmlled .gt_column_spanner_outer:last-child {
+padding-right: 0;
+}
+#xuxtfmlled .gt_column_spanner {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 5px;
+overflow-x: hidden;
+display: inline-block;
+width: 100%;
+}
+#xuxtfmlled .gt_spanner_row {
+border-bottom-style: hidden;
+}
+#xuxtfmlled .gt_group_heading {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+text-align: left;
+}
+#xuxtfmlled .gt_empty_group_heading {
+padding: 0.5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: middle;
+}
+#xuxtfmlled .gt_from_md > :first-child {
+margin-top: 0;
+}
+#xuxtfmlled .gt_from_md > :last-child {
+margin-bottom: 0;
+}
+#xuxtfmlled .gt_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+margin: 10px;
+border-top-style: solid;
+border-top-width: 1px;
+border-top-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+overflow-x: hidden;
+}
+#xuxtfmlled .gt_stub {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+}
+#xuxtfmlled .gt_stub_row_group {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+vertical-align: top;
+}
+#xuxtfmlled .gt_row_group_first td {
+border-top-width: 2px;
+}
+#xuxtfmlled .gt_row_group_first th {
+border-top-width: 2px;
+}
+#xuxtfmlled .gt_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#xuxtfmlled .gt_first_summary_row {
+border-top-style: solid;
+border-top-color: #D3D3D3;
+}
+#xuxtfmlled .gt_first_summary_row.thick {
+border-top-width: 2px;
+}
+#xuxtfmlled .gt_last_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#xuxtfmlled .gt_grand_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#xuxtfmlled .gt_first_grand_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-style: double;
+border-top-width: 6px;
+border-top-color: #D3D3D3;
+}
+#xuxtfmlled .gt_last_grand_summary_row_top {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: double;
+border-bottom-width: 6px;
+border-bottom-color: #D3D3D3;
+}
+#xuxtfmlled .gt_striped {
+background-color: rgba(128, 128, 128, 0.05);
+}
+#xuxtfmlled .gt_table_body {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#xuxtfmlled .gt_footnotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#xuxtfmlled .gt_footnote {
+margin: 0px;
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#xuxtfmlled .gt_sourcenotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#xuxtfmlled .gt_sourcenote {
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#xuxtfmlled .gt_left {
+text-align: left;
+}
+#xuxtfmlled .gt_center {
+text-align: center;
+}
+#xuxtfmlled .gt_right {
+text-align: right;
+font-variant-numeric: tabular-nums;
+}
+#xuxtfmlled .gt_font_normal {
+font-weight: normal;
+}
+#xuxtfmlled .gt_font_bold {
+font-weight: bold;
+}
+#xuxtfmlled .gt_font_italic {
+font-style: italic;
+}
+#xuxtfmlled .gt_super {
+font-size: 65%;
+}
+#xuxtfmlled .gt_footnote_marks {
+font-size: 75%;
+vertical-align: 0.4em;
+position: initial;
+}
+#xuxtfmlled .gt_asterisk {
+font-size: 100%;
+vertical-align: 0;
+}
+#xuxtfmlled .gt_indent_1 {
+text-indent: 5px;
+}
+#xuxtfmlled .gt_indent_2 {
+text-indent: 10px;
+}
+#xuxtfmlled .gt_indent_3 {
+text-indent: 15px;
+}
+#xuxtfmlled .gt_indent_4 {
+text-indent: 20px;
+}
+#xuxtfmlled .gt_indent_5 {
+text-indent: 25px;
+}
+#xuxtfmlled .katex-display {
+display: inline-flex !important;
+margin-bottom: 0.75em !important;
+}
+#xuxtfmlled div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-bootstrap="false">
+<caption>Parent company with the largest number of recorded waste items in each country.</caption>
+<thead>
+<tr class="gt_heading header">
+<td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border"><strong>Table 4: Company Contributing the Most Recorded Waste by Country</strong></td>
+</tr>
+<tr class="gt_col_headings even">
+<th id="country" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" style="font-weight: bold" scope="col">Country</th>
+<th id="parent_company" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" style="font-weight: bold" scope="col">Parent Company</th>
+<th id="percent" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" style="font-weight: bold" scope="col">Percent</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Argentina</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">21.21%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Australia</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">17.99%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Bangladesh</td>
+<td class="gt_row gt_left" headers="parent_company">Unilever</td>
+<td class="gt_row gt_right" headers="percent">10.05%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Benin</td>
+<td class="gt_row gt_left" headers="parent_company">Pure Water, Inc.</td>
+<td class="gt_row gt_right" headers="percent">98.46%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Bhutan</td>
+<td class="gt_row gt_left" headers="parent_company">Assorted</td>
+<td class="gt_row gt_right" headers="percent">100.00%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Brazil</td>
+<td class="gt_row gt_left" headers="parent_company">Assorted</td>
+<td class="gt_row gt_right" headers="percent">60.87%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Bulgaria</td>
+<td class="gt_row gt_left" headers="parent_company">Lidl</td>
+<td class="gt_row gt_right" headers="percent">15.79%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Bulgaria</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">15.79%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Burkina Faso</td>
+<td class="gt_row gt_left" headers="parent_company">Inconnu</td>
+<td class="gt_row gt_right" headers="percent">39.51%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Cameroon</td>
+<td class="gt_row gt_left" headers="parent_company">EI Sahely group</td>
+<td class="gt_row gt_right" headers="percent">10.80%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Canada</td>
+<td class="gt_row gt_left" headers="parent_company">Costco</td>
+<td class="gt_row gt_right" headers="percent">20.53%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">China</td>
+<td class="gt_row gt_left" headers="parent_company">Nongfu Spring</td>
+<td class="gt_row gt_right" headers="percent">7.77%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Colombia</td>
+<td class="gt_row gt_left" headers="parent_company">Assorted</td>
+<td class="gt_row gt_right" headers="percent">56.24%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Cote D_ivoire</td>
+<td class="gt_row gt_left" headers="parent_company">AWA</td>
+<td class="gt_row gt_right" headers="percent">100.00%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Cyprus</td>
+<td class="gt_row gt_left" headers="parent_company">AGROS WATER</td>
+<td class="gt_row gt_right" headers="percent">100.00%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">ECUADOR</td>
+<td class="gt_row gt_left" headers="parent_company">Mondelez International</td>
+<td class="gt_row gt_right" headers="percent">17.12%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">France</td>
+<td class="gt_row gt_left" headers="parent_company">Philip Morris International</td>
+<td class="gt_row gt_right" headers="percent">11.90%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Germany</td>
+<td class="gt_row gt_left" headers="parent_company">Haribo</td>
+<td class="gt_row gt_right" headers="percent">26.32%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Ghana</td>
+<td class="gt_row gt_left" headers="parent_company">Blow-Chem Industries</td>
+<td class="gt_row gt_right" headers="percent">36.56%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Hong Kong</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">14.17%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">India</td>
+<td class="gt_row gt_left" headers="parent_company">Tamil Nadu Co-operative Milk Producers&#39; Federation Ltd</td>
+<td class="gt_row gt_right" headers="percent">29.35%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Indonesia</td>
+<td class="gt_row gt_left" headers="parent_company">Danone</td>
+<td class="gt_row gt_right" headers="percent">12.57%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Ireland</td>
+<td class="gt_row gt_left" headers="parent_company">Lidl</td>
+<td class="gt_row gt_right" headers="percent">20.00%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Italy</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">24.39%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Japan</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">30.19%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Kenya</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">23.28%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Latvia</td>
+<td class="gt_row gt_left" headers="parent_company">Cesu Premium</td>
+<td class="gt_row gt_right" headers="percent">5.90%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Malaysia</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">12.46%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Maldives</td>
+<td class="gt_row gt_left" headers="parent_company">Nestlé</td>
+<td class="gt_row gt_right" headers="percent">100.00%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Mexico</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">27.25%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Montenegro</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">31.87%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">NIGERIA</td>
+<td class="gt_row gt_left" headers="parent_company">La Doo</td>
+<td class="gt_row gt_right" headers="percent">29.85%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Netherlands</td>
+<td class="gt_row gt_left" headers="parent_company">Slammers Energy Drink</td>
+<td class="gt_row gt_right" headers="percent">13.81%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Philippines</td>
+<td class="gt_row gt_left" headers="parent_company">Universal Robina Corporation</td>
+<td class="gt_row gt_right" headers="percent">13.70%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Portugal</td>
+<td class="gt_row gt_left" headers="parent_company">Super Bock Group</td>
+<td class="gt_row gt_right" headers="percent">29.41%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Rwanda</td>
+<td class="gt_row gt_left" headers="parent_company">Bakhresa Group</td>
+<td class="gt_row gt_right" headers="percent">19.10%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Slovenia</td>
+<td class="gt_row gt_left" headers="parent_company">Philip Morris International</td>
+<td class="gt_row gt_right" headers="percent">15.43%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">South Africa</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">80.88%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Spain</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">20.51%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Sri Lanka</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">10.77%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Switzerland</td>
+<td class="gt_row gt_left" headers="parent_company">NULL</td>
+<td class="gt_row gt_right" headers="percent">87.53%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Taiwan_ Republic of China (ROC)</td>
+<td class="gt_row gt_left" headers="parent_company">Imperial Brands</td>
+<td class="gt_row gt_right" headers="percent">100.00%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Tanzania</td>
+<td class="gt_row gt_left" headers="parent_company">Bakhresa Group</td>
+<td class="gt_row gt_right" headers="percent">26.53%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Thailand</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">22.96%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Tunisia</td>
+<td class="gt_row gt_left" headers="parent_company">Reynolds American, Inc.</td>
+<td class="gt_row gt_right" headers="percent">36.25%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Turkey</td>
+<td class="gt_row gt_left" headers="parent_company">Nestlé</td>
+<td class="gt_row gt_right" headers="percent">97.75%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Ukraine</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">8.40%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">United Arab Emirates</td>
+<td class="gt_row gt_left" headers="parent_company">Mai Dubai</td>
+<td class="gt_row gt_right" headers="percent">91.67%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">United States of America</td>
+<td class="gt_row gt_left" headers="parent_company">The Kroger Company</td>
+<td class="gt_row gt_right" headers="percent">8.91%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Vietnam</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">15.24%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Chile</td>
+<td class="gt_row gt_left" headers="parent_company">cambiaso</td>
+<td class="gt_row gt_right" headers="percent">19.18%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Denmark</td>
+<td class="gt_row gt_left" headers="parent_company">Mondelez International</td>
+<td class="gt_row gt_right" headers="percent">8.63%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Ecuador</td>
+<td class="gt_row gt_left" headers="parent_company">Pepsico</td>
+<td class="gt_row gt_right" headers="percent">74.19%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">El Salvador</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">83.05%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Greece</td>
+<td class="gt_row gt_left" headers="parent_company">Mars, Incorporated</td>
+<td class="gt_row gt_right" headers="percent">43.75%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Honduras</td>
+<td class="gt_row gt_left" headers="parent_company">Pepsico</td>
+<td class="gt_row gt_right" headers="percent">100.00%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Korea</td>
+<td class="gt_row gt_left" headers="parent_company">Kt&amp;G</td>
+<td class="gt_row gt_right" headers="percent">37.10%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Kuwait</td>
+<td class="gt_row gt_left" headers="parent_company">Philip Morris International</td>
+<td class="gt_row gt_right" headers="percent">69.77%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Lithuania</td>
+<td class="gt_row gt_left" headers="parent_company">Perfetti Van Melle</td>
+<td class="gt_row gt_right" headers="percent">18.95%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Nigeria</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">18.63%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Peru</td>
+<td class="gt_row gt_left" headers="parent_company">Nestle</td>
+<td class="gt_row gt_right" headers="percent">17.86%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Romania</td>
+<td class="gt_row gt_left" headers="parent_company">The Coca-Cola Company</td>
+<td class="gt_row gt_right" headers="percent">69.23%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Serbia</td>
+<td class="gt_row gt_left" headers="parent_company">Philip Morris International</td>
+<td class="gt_row gt_right" headers="percent">34.08%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">Singapore</td>
+<td class="gt_row gt_left" headers="parent_company">Danone</td>
+<td class="gt_row gt_right" headers="percent">53.12%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="country">Togo</td>
+<td class="gt_row gt_left" headers="parent_company">Philip Morris International</td>
+<td class="gt_row gt_right" headers="percent">95.12%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="country">United Kingdom of Great Britain &amp; Northern Ireland</td>
+<td class="gt_row gt_left" headers="parent_company">Mondelez International</td>
+<td class="gt_row gt_right" headers="percent">11.68%</td>
+</tr>
+</tbody>
+</table>
+
 </div>
 </div>
 </div>
