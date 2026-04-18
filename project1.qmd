@@ -328,6 +328,8 @@ countries %>%
 
 ### API 1: restcountries.com
 
+We retrieved geographic and demographic context data for all countries from the REST Countries API V4. REST Countries is a free, open-source RESTful API covering over 250 countries regularly updated to reflect changes in the world's social and economic structure. REST Countries is a community-maintained aggregator, compiling country metadata from a variety of public reference sources into a single convenient source. We retrieved region, subregion, UN membership status, population density, and geolocation for each country. The data we recovered is not year-specific due to the constant updating of the REST Countries endpoint. It reflects current country metadata rather than time series values. We chose this data to provide geographic and political context for the countries in the plastic pollution dataset, enabling grouping and comparison of waste patterns by world region and development status. Data were accessed using the httr package and parsed with jsonlite.
+
 ```{r}
 #| label: data-from-api
 
@@ -424,6 +426,8 @@ joined %>%
 ```
 
 ### API 2: worldbank
+
+We retrieved total population data and gdp data (in USD) for the years of interest in the plastic data set (2019 and 2020) from WDI. The World Development Indicators (WDI) is the primary World Bank collection of development indicators, compiled from official international sources. World Bank GDP data is collected by World Bank country economists using information published by national statistical authorities, or sourced from the OECD or directly from country official data. Population data is collected from national statistical offices. We accessed this data using the World Bank Indicators REST API. We chose this data because it provides us context on the countries where waste was collected, allowing us to investigate the relationship between both gdp, population and waste records across countries. Data were accessed using the httr package and parsed with jsonlite.
 
 ```{r}
 #| label: API, World Bank  API
@@ -543,6 +547,9 @@ joined2 %>%
 
 ## Web-Scraped Data
 
+We scraped two country-level datasets from Wikipedia using the rvest package to integrate with the plastics data, along with the data collected from the APIs above. Average yearly temperature data was available at a single link, so we were able to scrape it from a single Wikipedia page. It lists temperatures by country, with values extracted directly from the page's table and parsed into numeric format. We scraped the population density using iteration across multiple Wikipedia pages. For every country in the plastics dataset, a country-specific Wikipedia URL was constructed and the page's info box table was scraped to extract the density value. Wikipedia is an open source page updated by volunteer editors and verified by third-party reliable sources. Population density and temperature data reflect the most recent updates and does not reflect yearly data specific to 2019 or 2020. We scraped this data to investigate a environmental and social density impact on plastic waste.
+
+
 ```{r}
 #| label: Webscraping, Wiki population
 #not multi page
@@ -638,7 +645,7 @@ joined_all <- joined2 %>%
 ```
 
 
-#### Table 2
+#### Visual 3
 
 ```{r}
 joined_all %>%
@@ -654,6 +661,29 @@ joined_all %>%
     labs(
       title = "Total Plastic vs Average Temperature by Country",
       x = "Average Temperature (°C)",
+      y = "Total Plastic Collected"
+    ) +
+    theme_minimal()
+```
+
+#### Visual 4
+
+```{r}
+#| label: Total lastic vs population density 
+joined_all %>%
+  group_by(country, year) %>%
+  summarise(
+    total_plastic = sum(grand_total, na.rm = TRUE),
+    pop_density = mean(pop_density, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(pop_density < quantile(pop_density, 0.99, na.rm = TRUE)) %>% 
+  ggplot(aes(x = pop_density, y = total_plastic)) +
+    geom_point(alpha = 0.7, size = 2) +
+    geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
+    labs(
+      title = "Total Plastic vs Population Density by Country",
+      x = "Population Density",
       y = "Total Plastic Collected"
     ) +
     theme_minimal()
