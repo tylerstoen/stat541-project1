@@ -64,6 +64,11 @@ knitr::include_graphics("checkpoint1_plot_ideas.png")
 ```{r}
 library(tidyverse)
 library(gt)
+library(glue)
+library(httr)
+library(jsonlite)
+library(tidyjson)
+library(rvest)
 ```
 
 ## Table 1
@@ -319,4 +324,338 @@ countries %>%
 #   )
 ```
 
+## Data from API
+
+### API 1: restcountries.com
+
+```{r}
+#| label: data-from-api
+
+base_url <- "https://restcountries.com/v4/"
+
+restcountries <- GET(glue("{base_url}all?fields=name,continents,region,subregion,unMember,gini,density,geolocation"))
+
+restcountries
+
+restcountries_tidy <- restcountries %>% 
+  content(as = "text") %>% 
+  fromJSON(flatten = TRUE) %>%
+  as_tibble()
+
+```
+
+```{r}
+#| label: merge-plastics
+
+library(stringi)
+
+normalize_name <- function(x) {
+  x %>% 
+    stri_trans_general("Latin-ASCII") %>% 
+    str_to_lower() %>% 
+    str_remove_all("[^a-z ]") %>% 
+    str_trim() %>% 
+    str_squish()
+}
+
+plastics_clean <- plastics %>% 
+  filter(country != "EMPTY") %>% 
+  mutate(
+    country = case_when(
+      country == "Korea" ~ "South Korea",
+      country == "Taiwan_ Republic of China (ROC)" ~ "Taiwan",
+      country == "United Kingdom of Great Britain & Northern Ireland" ~ 
+        "United Kingdom",
+      TRUE ~ country
+    )
+  ) %>%
+  mutate(country_key = normalize_name(country))
+
+restcountries_clean <- restcountries_tidy %>% 
+  select(name.common, name.official, region, subregion,
+         density, unMember, geolocation.latitude, 
+         geolocation.longitude) %>% 
+  mutate(common_key = recode(
+    normalize_name(name.common),
+    "ivory coast" = "cote divoire"
+    ),
+         official_key = normalize_name(name.official))
+  
+
+# Different name types, try both
+
+joined <- plastics_clean %>%
+  left_join(
+    restcountries_clean %>% select(-official_key),
+    by = c("country_key" = "common_key")
+  )
+
+matched <- joined %>% filter(!is.na(region))
+unmatched <- joined %>% filter(is.na(region)) %>%
+  select(names(plastics_clean))
+
+refilled <- unmatched %>%
+  left_join(
+    restcountries_clean %>% select(-common_key),
+    by = c("country_key" = "official_key")
+  )
+
+joined <- bind_rows(matched, refilled)
+```
+
+#### Visual 1
+
+```{r}
+joined %>%
+  filter(!is.na(region)) %>% 
+  group_by(country, region) %>%
+  summarize(
+    total = sum(grand_total, na.rm = TRUE), .groups = "drop"
+  ) %>% 
+  ggplot(aes(x=total, y=region, colour=region)) +
+  geom_boxplot() +
+  labs(
+    title = "Total Plastic Waste by Region",
+    x= "Total Plastic Waste",
+    y= "Region"
+  ) +
+  scale_color_brewer(palette = "Pastel1", guide = "none") +
+  theme_minimal()
+```
+
+### API 2: worldbank
+
+```{r}
+#| label: API, World Bank  API
+
+base_url <- "https://api.worldbank.org/v2/country/all/indicator/"
+
+pop_code <- "SP.POP.TOTL"
+gdp_code <- "NY.GDP.MKTP.CD"
+
+pop_url <- str_c(base_url, pop_code, "?format=json&per_page=20000")
+gdp_url <- str_c(base_url, gdp_code, "?format=json&per_page=20000")
+
+pop_raw <- GET(pop_url) %>% 
+  content(as = "text") %>% 
+  fromJSON(flatten = TRUE) %>%
+  pluck(2) %>% 
+  as_tibble() %>% 
+  select(
+    country.value,
+    year = date,
+    population = value
+  ) %>% 
+  mutate(year = as.numeric(year)) %>% 
+  filter(year %in% c(2019, 2020))
+
+gdp_raw <- GET(gdp_url) %>% 
+  content(as = "text") %>% 
+  fromJSON(flatten = TRUE) %>% 
+  pluck(2) %>% 
+  as_tibble() %>% 
+  select(
+    country.value,
+    year = date,
+    gdp = value
+  ) %>% 
+  mutate(year = as.numeric(year)) %>% 
+  filter(year %in% c(2019, 2020))
+
+pop_and_gdp_raw <- inner_join(pop_raw, gdp_raw, by = c("country.value", "year")) %>% 
+  mutate(country.value = recode(
+           country.value,
+          "Turkiye" = "Turkey",
+          "Hong Kong SAR, China" = "Hong Kong",
+          "Viet Nam" = "Vietnam",
+          "Korea, Rep." = "South Korea",
+          "United States" = "United States of America"
+          ),
+         country_code = normalize_name(country.value))
+
+joined2 <- joined %>% 
+  left_join(pop_and_gdp_raw, by = c("country_key" = "country_code", "year")) %>% 
+  mutate(
+    gdppercapita = gdp / population
+  )
+                              
+```
+
+#### Visual 2
+
+```{r}
+joined2 %>% 
+  group_by(country, gdppercapita, region) %>% 
+  summarize(
+    total = sum(grand_total, na.rm = TRUE),
+    .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = gdppercapita, y = total, colour = region)) +
+  geom_point() +
+  labs(
+    title = "Plastic Waste Per Capita",
+    x= "GDP per Capita",
+    y= "Total Recorded Plastic Waste"
+  ) +
+  theme_minimal()
+  
+```
+
+#### Table 1
+
+```{r}
+joined2 %>%
+  group_by(country, year) %>%
+  summarise(
+    total_plastic = sum(grand_total, na.rm = TRUE),
+    population = mean(population, na.rm = TRUE),
+    plastic_per_person = total_plastic / population,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(plastic_per_person))%>%
+  slice_head(n = 20) %>% 
+  gt() %>% 
+  cols_label(
+    country = md("**Country**"),
+    year = md("**Year**"),
+    total_plastic = md("**Total Plastic**"),
+    population = md("**Population**"),
+    plastic_per_person = md("**Plastic per Person**")
+  ) %>% 
+  fmt_number(
+    columns = c(total_plastic, population),
+    decimals = 0
+  ) %>% 
+  fmt_number(
+    columns = plastic_per_person,
+    decimals = 5
+  ) %>% 
+  tab_header(
+    title = md("**Top 20 Countries by Plastic Contributed per Person**")
+  ) %>% 
+  tab_source_note(
+    source_note = "Plastic per person was calculated as total plastic collected divided by population."
+  )
+
+
+```
+
+
+## Web-Scraped Data
+
+```{r}
+#| label: Webscraping, Wiki population
+#not multi page
+url <- "https://en.wikipedia.org/wiki/List_of_countries_by_average_yearly_temperature"
+
+temp_data <- read_html(url) %>%
+  html_table(fill = TRUE)
+
+temp_data <- temp_data[[1]]
+
+names(temp_data) <- make.names(names(temp_data), unique = TRUE)
+
+temp_data <- temp_data %>% 
+  rename(country = `Countryor.region`) %>%
+  mutate(
+    Temperature = readr::parse_number(Temperature),
+    country_key = normalize_name(country)
+  ) %>% 
+  select(country_key, Temperature)
+```
+
+```{r}
+#| label: Webscraping, Wiki population density
+
+scrape_density <- function(country_name, wiki_name) {
+  
+  url <- str_c("https://en.wikipedia.org/wiki/", wiki_name)
+  
+  out <- tryCatch({
+    page <- read_html(url)
+    
+    rows <- page %>%
+      html_elements("table.infobox tr")
+    
+    row_text <- rows %>% html_text2()
+    
+    density_idx <- str_which(row_text, regex("density", ignore_case = TRUE))
+    
+    if (length(density_idx) == 0) {
+      return(tibble(country_key = country_name, pop_density = NA_real_))
+    }
+    
+    density_row <- rows[density_idx[1]]
+    
+    cells <- density_row %>% html_elements("th, td") %>% html_text2()
+    
+    if (length(cells) < 2) {
+      return(tibble(country_key = country_name, pop_density = NA_real_))
+    }
+    
+    value <- parse_number(cells[length(cells)])
+    
+    tibble(country_key = country_name, pop_density = value)
+    
+  }, error = function(e) {
+    tibble(country_key = country_name, pop_density = NA_real_)
+  })
+  
+  out
+}
+```
+
+```{r}
+#| label: mapping to countries in plastic data
+
+wiki_countries <- joined2 %>%
+  distinct(country_key) %>%
+  mutate(
+    wiki_country = recode(country_key,
+      "united states of america" = "United_States",
+      "hong kong" = "Hong_Kong",
+      "south africa" = "South_Africa",
+      "sri lanka" = "Sri_Lanka",
+      "cote divoire" = "Ivory_Coast",
+      "taiwan republic of china roc" = "Taiwan",
+      "united kingdom of great britain northern ireland" = "United_Kingdom",
+      "korea" = "South_Korea",
+      .default = str_replace_all(str_to_title(country_key), " ", "_")
+    )
+  )
+
+density_data <- map2_dfr(
+  wiki_countries$country_key,
+  wiki_countries$wiki_country,
+  scrape_density
+)
+```
+
+```{r}
+joined_all <- joined2 %>% 
+  left_join(temp_data, by = "country_key") %>% 
+  left_join(density_data, by = "country_key")
+```
+
+
+#### Table 2
+
+```{r}
+joined_all %>%
+  group_by(country, year) %>%
+  summarise(
+    total_plastic = sum(grand_total, na.rm = TRUE),
+    Temperature = mean(Temperature, na.rm = TRUE),
+    .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = Temperature, y = total_plastic)) +
+    geom_point(alpha = 0.7, size = 2) +
+    geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
+    labs(
+      title = "Total Plastic vs Average Temperature by Country",
+      x = "Average Temperature (°C)",
+      y = "Total Plastic Collected"
+    ) +
+    theme_minimal()
+```
 
