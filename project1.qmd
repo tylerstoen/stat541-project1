@@ -69,6 +69,7 @@ library(httr)
 library(jsonlite)
 library(tidyjson)
 library(rvest)
+library(ggridges)
 ```
 
 ## Table 1
@@ -405,26 +406,6 @@ refilled <- unmatched %>%
 joined <- bind_rows(matched, refilled)
 ```
 
-#### Visual 1
-
-```{r}
-joined %>%
-  filter(!is.na(region)) %>% 
-  group_by(country, region) %>%
-  summarize(
-    total = sum(grand_total, na.rm = TRUE), .groups = "drop"
-  ) %>% 
-  ggplot(aes(x=total, y=region, colour=region)) +
-  geom_boxplot() +
-  labs(
-    title = "Total Plastic Waste by Region",
-    x= "Total Plastic Waste",
-    y= "Region"
-  ) +
-  scale_color_brewer(palette = "Pastel1", guide = "none") +
-  theme_minimal()
-```
-
 ### API 2: worldbank
 
 We retrieved total population data and gdp data (in USD) for the years of interest in the plastic data set (2019 and 2020) from WDI. The World Development Indicators (WDI) is the primary World Bank collection of development indicators, compiled from official international sources. World Bank GDP data is collected by World Bank country economists using information published by national statistical authorities, or sourced from the OECD or directly from country official data. Population data is collected from national statistical offices. We accessed this data using the World Bank Indicators REST API. We chose this data because it provides us context on the countries where waste was collected, allowing us to investigate the relationship between both gdp, population and waste records across countries. Data were accessed using the httr package and parsed with jsonlite.
@@ -483,26 +464,6 @@ joined2 <- joined %>%
     gdppercapita = gdp / population
   )
                               
-```
-
-#### Visual 2
-
-```{r}
-joined2 %>% 
-  group_by(country, gdppercapita, region) %>% 
-  summarize(
-    total = sum(grand_total, na.rm = TRUE),
-    .groups = "drop"
-  ) %>% 
-  ggplot(aes(x = gdppercapita, y = total, colour = region)) +
-  geom_point() +
-  labs(
-    title = "Plastic Waste Per Capita",
-    x= "GDP per Capita",
-    y= "Total Recorded Plastic Waste"
-  ) +
-  theme_minimal()
-  
 ```
 
 #### Table 1
@@ -645,9 +606,91 @@ joined_all <- joined2 %>%
 ```
 
 
-#### Visual 3
+## Visuals
+
+### Visual 1
 
 ```{r}
+#| fig-alt: "A ridgeline density plot showing the distribution of total plastic waste per country, separated by continent. Americas has the highest peak near zero with a moderate right tail. Asia has a flatter distribution with several secondary peaks at high waste values representing individual countries producing high waste. Africa is multimodal. Europe is concentrated near zero with one outlier peak. All distributions are right-skewed."
+joined_all %>%
+  filter(!is.na(region), region != "Oceania") %>% 
+  group_by(country, region) %>%
+  summarize(
+    total = sum(grand_total, na.rm = TRUE), .groups = "drop"
+  ) %>% 
+  mutate(
+    region = fct_reorder(region, total, .desc = TRUE)
+  ) %>% 
+  ggplot(aes(x=total, y=region, fill=region)) +
+  geom_density_ridges(alpha = 0.5, height = 1, position = "identity") +
+  labs(
+    title = "Total Plastic Waste by Continent",
+    subtitle = "Distribution of Total Plastic Waste by Continent (in Pieces)",
+    x= "Total Plastic Waste",
+    y= ""
+  ) +
+  scale_fill_brewer(palette = "Pastel1") +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### Visual 1.5
+
+```{r}
+#| fig-alt: "A ridgeline density plot showing the distribution of plastic waste per capita in pieces per person by continent, with four ridges for Europe, Americas, Asia, and Africa. All distributions are right-skewed and peak near zero plastic items recorded per person. Europe has the widest spread with several secondary peaks and one extreme outlier. Asia also has an outlier country. Africa is the most concentrated near zero with a slightly wider base than the others. Oceania is excluded."
+
+joined_all %>%
+  filter(!is.na(region), region != "Oceania") %>% 
+  group_by(country, region, population) %>%
+  summarize(
+    total = sum(grand_total, na.rm = TRUE), .groups = "drop"
+  ) %>% 
+  mutate(
+    region = fct_reorder(region, total, .desc = TRUE),
+    waste_per_capita = total/population
+  ) %>% 
+  ggplot(aes(x=waste_per_capita, y=region, fill=region)) +
+  geom_density_ridges(alpha = 0.5, height = 1, position = "identity") +
+  labs(
+    title = "Plastic Waste per Capita by Continent",
+    subtitle = "Distribution of Plastic Waste per Capita by Continent (in Pieces/Person)",
+    x= "Plastic Waste Per Capita",
+    y= ""
+  ) +
+  scale_fill_brewer(palette = "Pastel1") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+### Visual 2
+
+```{r}
+#| fig-alt: "The plot above shows total recorded plastic waste on the y-axis against GDP per capita on the x-axis, with points colored by continent. The majority of points are clustered near zero on both axes. One African country is a strong outlier with approximately 165,000 units of plastic waste recorded despite a very low GDP per capita below 5,000. Several Asian and Americas countries also show elevated waste counts at low GDP levels. European countries are spread across the full GDP range but generally show low waste counts. No clear positive or negative relationship between GDP per capita and plastic waste is visible across the full dataset."
+
+joined_all %>% 
+  group_by(country, gdppercapita, region) %>% 
+  summarize(
+    total = sum(grand_total, na.rm = TRUE),
+    .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = gdppercapita, y = total, colour = region)) +
+  geom_point() +
+  labs(
+    title = "Plastic Waste Per Capita",
+    x= "GDP per Capita",
+    y= "Total Recorded Plastic Waste"
+  ) +
+  ylim(c(0,180000)) +
+  theme_minimal()
+```
+
+### Visual 3
+
+```{r}
+#| fig-alt: "This plot investigates the relationship between total plastic collected on the against average yearly temperature in degrees Celsius, with individual points representing countries. The trend line shows a slight positive relationship between temperature and plastic collected, though the relationship is weak. Most points are clustered near zero on the y-axis across all temperatures."
+
 joined_all %>%
   group_by(country, year) %>%
   summarise(
@@ -663,29 +706,72 @@ joined_all %>%
       x = "Average Temperature (°C)",
       y = "Total Plastic Collected"
     ) +
+    ylim(c(0,180000)) +
     theme_minimal()
 ```
 
-#### Visual 4
+## Model
 
 ```{r}
-#| label: Total lastic vs population density 
-joined_all %>%
-  group_by(country, year) %>%
-  summarise(
-    total_plastic = sum(grand_total, na.rm = TRUE),
-    pop_density = mean(pop_density, na.rm = TRUE),
-    .groups = "drop"
+model_data <- country_year %>%
+  filter(
+    total_plastic > 0,
+    !is.na(gdp),
+    !is.na(Temperature),
+    !is.na(pop_density),
+    !is.na(region)
   ) %>%
-  filter(pop_density < quantile(pop_density, 0.99, na.rm = TRUE)) %>% 
-  ggplot(aes(x = pop_density, y = total_plastic)) +
-    geom_point(alpha = 0.7, size = 2) +
-    geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
-    labs(
-      title = "Total Plastic vs Population Density by Country",
-      x = "Population Density",
-      y = "Total Plastic Collected"
-    ) +
-    theme_minimal()
+  mutate(
+    log_total_plastic = log(total_plastic),
+    log_gdp = log(gdp),
+    log_pop_density = log(pop_density + 1)
+  )
+
+plastic_model <- lm(
+  log_total_plastic ~ log_gdp + Temperature + log_pop_density  + region,
+  data = model_data
+)
+
+summary(plastic_model)
 ```
+
+### Model Table
+
+```{r}
+library(broom)
+library(gt)
+
+model_table <- tidy(plastic_model, conf.int = TRUE) %>%
+  select(term, estimate, std.error, statistic, p.value, conf.low, conf.high)
+
+model_gt <- model_table %>%
+  gt() %>%
+  cols_label(
+    term = md("**Term**"),
+    estimate = md("**Estimate**"),
+    std.error = md("**Std. Error**"),
+    statistic = md("**t Statistic**"),
+    p.value = md("**p-value**"),
+    conf.low = md("**CI Lower**"),
+    conf.high = md("**CI Upper**")
+  ) %>%
+  fmt_number(
+    columns = c(estimate, std.error, statistic, conf.low, conf.high),
+    decimals = 3
+  ) %>%
+  fmt_number(
+    columns = p.value,
+    decimals = 4
+  ) %>%
+  tab_header(
+    title = md("**Regression Model for Log Total Plastic Collected**")
+  ) %>%
+  tab_source_note(
+    source_note = "Linear regression model predicting log total plastic collected from GDP, temperature, population density, and region."
+  )
+
+model_gt
+```
+
+
 
