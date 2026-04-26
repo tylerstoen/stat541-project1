@@ -2,8 +2,9 @@
 title: "Project 1: Checkpoint 1"
 author: "Tyler Stoen & Faran Igani"
 format: 
-  html:
+  html: 
     embed-resources: true
+    warning: false
 ---
 
 ```{r}
@@ -612,7 +613,9 @@ joined_all <- joined2 %>%
 
 ```{r}
 #| fig-alt: "A ridgeline density plot showing the distribution of total plastic waste per country, separated by continent. Americas has the highest peak near zero with a moderate right tail. Asia has a flatter distribution with several secondary peaks at high waste values representing individual countries producing high waste. Africa is multimodal. Europe is concentrated near zero with one outlier peak. All distributions are right-skewed."
-joined_all %>%
+#| fig-cap: " "
+
+vis_1 <- joined_all %>%
   filter(!is.na(region), region != "Oceania") %>% 
   group_by(country, region) %>%
   summarize(
@@ -633,14 +636,17 @@ joined_all %>%
   guides(fill = guide_legend(reverse = TRUE)) +
   theme_minimal() +
   theme(legend.position = "none")
+
+vis_1
 ```
 
 ### Visual 1.5
 
 ```{r}
 #| fig-alt: "A ridgeline density plot showing the distribution of plastic waste per capita in pieces per person by continent, with four ridges for Europe, Americas, Asia, and Africa. All distributions are right-skewed and peak near zero plastic items recorded per person. Europe has the widest spread with several secondary peaks and one extreme outlier. Asia also has an extreme outlier at 0.010 pieces of plastic per capita. Africa is the most concentrated near zero with a slightly wider base than the others."
+#| fig-cap: " "
 
-joined_all %>%
+vis_1.5 <- joined_all %>%
   filter(!is.na(region), region != "Oceania") %>% 
   group_by(country, region, population) %>%
   summarize(
@@ -661,6 +667,8 @@ joined_all %>%
   scale_fill_brewer(palette = "Pastel1") +
   theme_minimal() +
   theme(legend.position = "none")
+
+vis_1.5
 ```
 
 
@@ -668,8 +676,9 @@ joined_all %>%
 
 ```{r}
 #| fig-alt: "A scatterplot comparing recorded plastic waste on the y-axis against GDP per capita on the x-axis, with points colored by continent. The majority of points are clustered near zero on both axes. One African country is a strong outlier with approximately 165,000 units of plastic waste recorded despite a very low GDP per capita below 5,000. Several Asian and Americas countries also show elevated waste counts at low GDP levels. European countries are spread across the full GDP per capita range but generally show low waste counts. No clear positive or negative relationship between GDP per capita and plastic waste is visible across the full dataset."
+#| fig-cap: " "
 
-joined_all %>% 
+vis_2 <- joined_all %>% 
   group_by(country, gdppercapita, region) %>% 
   summarize(
     total = sum(grand_total, na.rm = TRUE),
@@ -684,14 +693,17 @@ joined_all %>%
   ) +
   ylim(c(0,180000)) +
   theme_minimal()
+
+vis_2
 ```
 
 ### Visual 3
 
 ```{r}
 #| fig-alt: "A scatterplot with overlaying trend line investigating the relationship between total plastic collected on the against average yearly temperature in degrees Celsius, with individual points representing countries. The trend line shows a slight positive relationship between temperature and plastic collected, though the relationship is weak. Most points are clustered near zero on the y-axis across all temperatures."
+#| fig-cap: " "
 
-joined_all %>%
+vis_3 <- joined_all %>%
   group_by(country, year) %>%
   summarise(
     total_plastic = sum(grand_total, na.rm = TRUE),
@@ -708,11 +720,30 @@ joined_all %>%
     ) +
     ylim(c(0,180000)) +
     theme_minimal()
+
+vis_3
 ```
 
 ## Model
 
 ```{r}
+country_year <- joined_all %>%
+  group_by(country, year, region) %>%
+  summarise(
+    total_plastic = sum(grand_total, na.rm = TRUE),
+    gdp = mean(gdp, na.rm = TRUE),
+    population = mean(population, na.rm = TRUE),
+    Temperature = mean(Temperature, na.rm = TRUE),
+    pop_density = mean(pop_density, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(
+    !is.na(total_plastic),
+    !is.na(gdp),
+    !is.na(Temperature),
+    !is.na(region)
+  )
+
 model_data <- country_year %>%
   filter(
     total_plastic > 0,
