@@ -17,6 +17,7 @@ execute:
 ```{r}
 #| label: Load packages 
 library(tidyverse)
+library(stringdist)
 library(gt)
 library(rvest)
 library(ggplot2)
@@ -29,10 +30,6 @@ library(tidyjson)
 library(ggridges)
 library(scales)
 ```
-
-## Github URL
-
-<https://github.com/FaranIgani/STAT-541---Project-1>
 
 # Data Context
 
@@ -127,7 +124,75 @@ refilled <- unmatched %>%
     by = c("country_key" = "official_key")
   )
 
-joined <- bind_rows(matched, refilled)
+joined1 <- bind_rows(matched, refilled)
+```
+
+```{r}
+#| label: merge-plastics-cont
+## Fuzzy matching for parent companies using stringdist
+
+noise_words <- c(
+  "\\bthe\\b",
+  "\\binc\\.?\\b",
+  "\\bco\\.?\\b",
+  "\\bltd\\.?\\b",
+  "\\bcorp\\.?\\b",
+  "\\bcompany\\b",
+  "\\bcompanies\\b",
+  "\\bgroup\\b",       # "Nestlé Group" -> "nestlé"
+  "\\bholdings\\.?\\b",
+  "\\bllc\\.?\\b",
+  "\\bplc\\.?\\b",
+  "\\bgmbh\\b",        # common German suffix
+  "\\bsa\\b",          # common in Latin America/Europe
+  "\\bsrl\\b"
+)
+
+normalize_company <- function(x) {
+  x %>%
+    str_to_lower() %>%
+    str_remove_all(paste(noise_words, collapse = "|")) %>%
+    str_remove_all("[^a-z0-9 ]") %>%
+    str_squish()
+}
+
+resolve_typos <- function(names, threshold = 0.1) {
+  dist_matrix <- stringdistmatrix(names, names, method = "jw")
+  diag(dist_matrix) <- Inf
+  
+  canonical <- names
+  
+  for (i in seq_along(names)) {
+    best_dist <- min(dist_matrix[i, ])
+    if (best_dist < threshold) {
+      best_match <- which.min(dist_matrix[i, ])
+      canonical[i] <- min(names[i], names[best_match])
+    }
+  }
+  
+  tibble(normalized = names, canonical = str_to_title(canonical))
+}
+
+companies_raw <- unique(joined_all$parent_company)
+
+name_map <- tibble(original = companies_raw) %>%
+  mutate(normalized = normalize_company(original)) %>%
+  left_join(
+    resolve_typos(unique(.$normalized)),  # fuzzy match on normalized names only
+    by = "normalized"
+  )
+
+canonical_labels <- name_map %>%
+  count(canonical, original) %>%          # count how often each original appears
+  slice_max(n, by = canonical, n = 1, with_ties = FALSE) %>% # pick the most frequent per canonical
+  select(canonical, display_name = original)
+
+joined <- joined1 %>%
+  left_join(name_map %>% select(original, canonical),
+            by = c("parent_company" = "original")) %>%
+  left_join(canonical_labels, by = "canonical") %>% 
+  mutate(parent_company = display_name) %>% 
+  select(-display_name, -canonical)
 ```
 
 ### API 2: worldbank
@@ -190,148 +255,52 @@ joined2 <- joined %>%
                               
 ```
 
-#### Table 1
-
-## Web-Scraped Data
-
-We scraped a country-level dataset from Wikipedia using the rvest package to integrate with the plastics data, along with the data collected from the APIs above. The data were published on Wikipedia, an open-source platform maintained by volunteer editors and supported by information from third-party reliable sources. The observational unit is a country, and we extracted population density by iterating across multiple country-specific Wikipedia pages. For each country in the plastics dataset, a corresponding Wikipedia URL was constructed, and the page’s infobox table was scraped to retrieve the population density value. Because Wikipedia is continuously updated, these data reflect the most recent available values rather than year-specific measurements for 2019 or 2020. We chose to include this dataset to provide environmental and social context, allowing us to investigate how population density may be associated with patterns in plastic waste across countries.
-
-```{r}
-#| label: Webscraping, Wiki population density
-
-scrape_density <- function(country_name, wiki_name) {
-  
-  url <- str_c("https://en.wikipedia.org/wiki/", wiki_name)
-  
-  out <- tryCatch({
-    page <- read_html(url)
-    
-    rows <- page %>%
-      html_elements("table.infobox tr")
-    
-    row_text <- rows %>% html_text2()
-    
-    density_idx <- str_which(row_text, regex("density", ignore_case = TRUE))
-    
-    if (length(density_idx) == 0) {
-      return(tibble(country_key = country_name, pop_density = NA_real_))
-    }
-    
-    density_row <- rows[density_idx[1]]
-    
-    cells <- density_row %>% html_elements("th, td") %>% html_text2()
-    
-    if (length(cells) < 2) {
-      return(tibble(country_key = country_name, pop_density = NA_real_))
-    }
-    
-    value <- parse_number(cells[length(cells)])
-    
-    tibble(country_key = country_name, pop_density = value)
-    
-  }, error = function(e) {
-    tibble(country_key = country_name, pop_density = NA_real_)
-  })
-  
-  out
-}
-```
-
-```{r}
-#| label: mapping to countries in plastic data
-
-wiki_countries <- joined2 %>%
-  distinct(country_key) %>%
-  mutate(
-    wiki_country = recode(country_key,
-      "united states of america" = "United_States",
-      "hong kong" = "Hong_Kong",
-      "south africa" = "South_Africa",
-      "sri lanka" = "Sri_Lanka",
-      "cote divoire" = "Ivory_Coast",
-      "taiwan republic of china roc" = "Taiwan",
-      "united kingdom of great britain northern ireland" = "United_Kingdom",
-      "korea" = "South_Korea",
-      .default = str_replace_all(str_to_title(country_key), " ", "_")
-    )
-  )
-
-density_data <- map2_dfr(
-  wiki_countries$country_key,
-  wiki_countries$wiki_country,
-  scrape_density
-)
-```
-
-```{r}
-joined_all <- joined2 %>% 
-  left_join(density_data, by = "country_key")
-```
-
 # Research Questions
 
 
--   How does country geography and economic status effect their amount of recorded plastic waste? Do more developed countries in terms of GDP and population tend to have more or less recorded waste?
+-   What are the characteristics of recorded plastic waste, in terms of the companies most responsible for the waste and the plastic types most commonly collected?
 
--   What does the recorded plastic look like? What companies do they tend to belong to? What plastic types make up most of the waste collected?
+-   How does country geography and economic status effect their amount of recorded plastic waste? Do more developed countries in terms of GDP and population tend to have more or less recorded waste?
 
 
 # Data Summaries & Visualizations
+
 
 ## **Research Question 1**
 
 **Table 1**
 
 ```{r}
-top_company_by_group <- function(data, group_var, company_var, total_var, group_value) {
+top_company_by_country <- function(ctry) {
   
-  data <- data %>%
-    mutate(
-      group_clean = stringr::str_to_title(.data[[group_var]])
-    )
+  ctry_norm <- normalize_name(ctry)
   
-  group_value <- stringr::str_to_title(group_value)
+  country_companies <- joined_all %>% 
+    filter(country_key == ctry_norm) %>% 
+    mutate(parent_company = str_squish(parent_company)) %>% 
+    filter(!is.na(parent_company),
+           !(parent_company %in% c("Grand Total", "null", "Unbranded", "Assorted", "NULL")))
   
-  clean <- data %>% 
-    filter(group_clean == group_value) %>% 
-    filter(
-      !is.na(.data[[company_var]]),
-      !(.data[[company_var]] %in% c("Grand Total", "null", "Unbranded"))
-    )
+  country_total <- country_companies %>% 
+  summarise(total = sum(grand_total, na.rm = TRUE)) %>% 
+  pull(total)
   
-  group_total <- clean %>% 
-    summarise(total = sum(.data[[total_var]], na.rm = TRUE)) %>% 
-    pull(total)
-  
-  clean %>% 
-    group_by(.data[[company_var]]) %>% 
-    summarise(total = sum(.data[[total_var]], na.rm = TRUE), .groups = "drop") %>% 
+  country_companies %>% 
+    group_by(parent_company) %>% 
+    summarise(total = sum(grand_total, na.rm = TRUE)) %>% 
     slice_max(total, n = 1) %>% 
-    mutate(
-      group = group_value,
-      percent = total / group_total
-    )
+    mutate(country = str_to_title(ctry_norm),
+           percent = total / country_total)
 }
 
-countries <- plastics %>% 
-  filter(country != "EMPTY") %>% 
-  distinct(country) %>%
-  pull(country)
-
-table4 <- countries %>% 
-  map(~ top_company_by_group(
-    data = plastics,
-    group_var = "country",
-    company_var = "parent_company",
-    total_var = "grand_total",
-    group_value = .x
-  )) %>% 
+joined_all %>%
+  distinct(country_key) %>%
+  pull(country_key) %>% 
+  map(top_company_by_country) %>% 
   list_rbind() %>% 
   filter(!is.nan(percent)) %>%
-  select(group, parent_company, percent)
-
-table4 %>% 
-  rename(country = group) %>% 
+  select(country, parent_company, percent) %>% 
+  arrange(desc(percent)) %>% 
   gt() %>% 
   cols_label(
     country        = "Country",
@@ -344,12 +313,59 @@ table4 %>%
   ) %>% 
   fmt_percent(columns = percent, decimals = 2) %>% 
   tab_header(
-    title = md("**Table 4: Company Contributing the Most Recorded Waste by Country**")
+    title = md("**Table 4: Company Contributing
+                 the Most Recorded Waste by Country**")
   ) %>% 
-  tab_caption(
-    caption = md("Parent company with the largest number of recorded waste items in each country.")
+  tab_source_note(
+    source_note = "Parent company with the largest number of recorded waste items in each country." 
   )
 ```
+
+```{r}
+#| label: Top companies by region
+#| fig-alt: "Faceted bar chart showing the top five parent companies contributing to plastic waste within each region (Africa, Americas, Asia, and Europe). In all regions, 'Unbranded' plastic dominates by a large margin, especially in Asia where it far exceeds other companies. Named companies such as The Coca-Cola Company, Nestle, and Unilever appear across multiple regions but contribute substantially less than unbranded sources. Overall, the distribution is highly skewed, with a single dominant category in each region and relatively small contributions from the remaining companies."
+#| fig-cap: "Bar chart showing the parent companies with the highest total recorded plastic waste, grouped by region."
+
+top_companies_region <- joined_all %>%
+  filter(
+    !is.na(parent_company),
+    !is.na(region),
+    region != "Oceania",
+    !(parent_company %in% c("Grand Total", "null", "Unbranded", "Assorted", "NULL"))
+  ) %>%
+  group_by(region, parent_company) %>%
+  summarise(
+    total_plastic = sum(grand_total, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(region) %>% 
+  mutate(company_ordered = fct_reorder(parent_company, total_plastic)) %>% 
+  slice_max(order_by = total_plastic, n = 5) %>% 
+  ungroup()
+
+ggplot(top_companies_region,
+       aes(x = total_plastic, y = company_ordered, fill = region)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ region, scales = "free_y") +
+  scale_x_continuous(
+    breaks = seq(0, 150000, by = 50000),
+    labels = scales::label_number(scale = 1e-3, suffix = "K")
+  ) +
+  labs(
+    title = "Top Parent Companies in Recorded Plastic Waste by Region",
+    subtitle = "Top 5 companies with the highest recorded plastic waste in each region",
+    x = "Total Plastic Collected",
+    y = ""
+  ) +
+  scale_fill_brewer(palette = "Dark2") +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(size = 11),
+    panel.grid.minor = element_blank()
+  ) +
+  theme_light()
+```
+
 
 **Table 2**
 
@@ -357,30 +373,29 @@ table4 %>%
 plastic_types <- c("hdpe", "ldpe", "o", "pet", "pp", "ps", "pvc")
 
 dominant_plastic <- function(ctry) {
-  df <- plastics %>%
-    filter(country != "EMPTY") %>%
-    mutate(country = str_to_title(country)) %>%   # match the casing
-    filter(country == ctry) %>%
+  
+  ctry_norm <- normalize_name(ctry)
+  
+  df <- joined_all %>%
+    filter(country_key == ctry_norm) %>%
     summarise(across(all_of(plastic_types), ~ sum(.x, na.rm = TRUE)))
   
   tibble(
-    country       = ctry,
+    country       = str_to_title(ctry_norm),
     dominant_type = plastic_types[which.max(df)],
     dominant_n    = max(df)
   )
 }
 
-top_countries <- plastics %>%
-  filter(country != "EMPTY") %>% 
-  mutate(country = str_to_title(country)) %>% 
-  group_by(country) %>%
-  summarise(total = sum(grand_total, na.rm = TRUE)) %>%
+top_countries <- joined_all %>% 
+  group_by(country_key) %>%
+  summarise(total = sum(grand_total, na.rm = TRUE)) %>% 
   slice_max(total, n = 10) %>%
-  pull(country)
+  pull(country_key)
 
 top_countries %>%
   map(dominant_plastic) %>%
-  list_rbind() %>%
+  bind_rows() %>%
   arrange(desc(dominant_n)) %>%
   mutate(dominant_type = dominant_type %>% 
            recode_values(
@@ -394,7 +409,7 @@ top_countries %>%
   ) %>% 
   gt() %>%
   tab_header(
-    title = md("**Table 2: Dominant Plastic Type in Top 10 Waste-Producing Countries**")
+    title = md("**Table 2: Dominant Plastic Type for Top 10 Countries in Total Recorded Waste**")
     ) %>%
   tab_caption(
     caption = md("Most commonly recorded plastic type for the countries producing the largest amount of plastic waste.")
