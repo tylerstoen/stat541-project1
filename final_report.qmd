@@ -491,86 +491,6 @@ table3 <- table3_year |>
 table3
 ```
 
-**Figure 1**
-
-```{r}
-#| fig-alt: "A ridgeline density plot showing the distribution of total plastic waste per country, separated by continent. Americas has the highest peak near zero with a moderate right tail. Asia has a flatter distribution with several secondary peaks at high waste values representing individual countries producing high waste. Africa is multimodal. Europe is concentrated near zero with one outlier peak. All distributions are right-skewed."
-#| fig-cap: "Density ridge plot showing the distribution of total plastic collected across regions. Each ridge represents the distribution of country-level plastic totals within a region."
-
-vis_1 <- joined_all %>%
-  filter(!is.na(region), region != "Oceania") %>% 
-  group_by(country, region) %>%
-  summarize(
-    total = sum(grand_total, na.rm = TRUE), .groups = "drop"
-  ) %>% 
-  mutate(
-    region = fct_reorder(region, total, .desc = TRUE)
-  ) %>% 
-  ggplot(aes(x=total, y=region, fill=region)) +
-  geom_density_ridges(alpha = 0.5, height = 1, position = "identity") +
-  labs(
-  title = "Total Plastic Waste by Continent",
-  subtitle = "Distribution of Total Plastic Waste by Continent",
-  x = "Total Plastic Waste (Number of Items)",
-  y = ""
-  ) +
-  scale_x_continuous(labels = label_comma()) +
-  scale_fill_brewer(palette = "Pastel1") +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-vis_1
-```
-
-**Figure 2**
-
-```{r}
-#| label: Top companies by region
-#| fig-alt: "Faceted bar chart showing the top five parent companies contributing to plastic waste within each region (Africa, Americas, Asia, and Europe). In all regions, 'Unbranded' plastic dominates by a large margin, especially in Asia where it far exceeds other companies. Named companies such as The Coca-Cola Company, Nestle, and Unilever appear across multiple regions but contribute substantially less than unbranded sources. Overall, the distribution is highly skewed, with a single dominant category in each region and relatively small contributions from the remaining companies."
-#| fig-cap: "Bar chart showing the parent companies with the highest total recorded plastic waste, grouped by region."
-
-top_companies_region <- joined_all %>%
-  filter(
-    !is.na(parent_company),
-    !is.na(region),
-    region != "Oceania",
-    parent_company != "Grand Total",
-    parent_company != "null",
-    parent_company != "NULL"
-  ) %>%
-  group_by(region, parent_company) %>%
-  summarise(
-    total_plastic = sum(grand_total, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  group_by(region) %>%
-  slice_max(order_by = total_plastic, n = 5) %>%
-  ungroup()
-
-ggplot(top_companies_region,
-       aes(x = total_plastic, y = fct_reorder(parent_company, total_plastic), fill = region)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~ region, scales = "free_y") +
-  scale_x_continuous(
-    breaks = seq(0, 150000, by = 50000),
-    labels = scales::label_number(scale = 1e-3, suffix = "K")
-  ) +
-  labs(
-    title = "Top Parent Companies in Plastic Waste by Region",
-    subtitle = "Top 5 companies with the highest recorded plastic waste in each region",
-    x = "Total Plastic Collected",
-    y = ""
-  ) +
-  scale_fill_brewer(palette = "Dark2") +
-  theme(
-    plot.title = element_text(face = "bold"),
-    plot.subtitle = element_text(size = 11),
-    panel.grid.minor = element_blank()
-  ) +
-  theme_light()
-```
-
 **Extra figure**
 
 ```{r}
@@ -605,6 +525,39 @@ ggplot(table3_long, aes(x = prop, y = plastic_type, color = factor(Year))) +
 ```
 
 ## **Research Question 2**
+
+**Figure 1**
+
+```{r}
+#| fig-alt: "A ridgeline density plot showing the distribution of total plastic waste per country, separated by continent. Americas has the highest peak near zero with a moderate right tail. Asia has a flatter distribution with several secondary peaks at high waste values representing individual countries producing high waste. Africa is multimodal. Europe is concentrated near zero with one outlier peak. All distributions are right-skewed."
+#| fig-cap: "Density ridge plot showing the distribution of total plastic collected across regions. Each ridge represents the distribution of country-level plastic totals within a region."
+
+vis_1 <- joined_all %>%
+  filter(!is.na(region), region != "Oceania") %>% 
+  group_by(country, region) %>%
+  summarize(
+    total = sum(grand_total, na.rm = TRUE), .groups = "drop"
+  ) %>% 
+  mutate(
+    region = fct_reorder(region, total, .desc = TRUE)
+  ) %>% 
+  ggplot(aes(x=total, y=region, fill=region)) +
+  geom_density_ridges(alpha = 0.5, height = 1, position = "identity") +
+  labs(
+  title = "Total Plastic Waste by Continent",
+  subtitle = "Distribution of Total Plastic Waste by Continent",
+  x = "Total Plastic Waste (Number of Items)",
+  y = ""
+  ) +
+  scale_x_continuous(labels = label_comma()) +
+  scale_fill_brewer(palette = "Pastel1") +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+vis_1
+```
+
 
 **Table 1**
 
