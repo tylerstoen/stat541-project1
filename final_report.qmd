@@ -277,20 +277,113 @@ joined_all <- joined %>%
 
 Shows that 2020 has better plastic classifications than 2019 (less "Other").
 
+**Figure 1**
+
+```{r}
+table3_long <- table3_year %>%
+  pivot_longer(
+    cols = -Year,
+    names_to = "plastic_type",
+    values_to = "prop"
+  )
+
+ggplot(table3_long, aes(x = prop, y = plastic_type, color = factor(Year))) +
+  geom_segment(
+    aes(x = 0, xend = prop, y = plastic_type, yend = plastic_type),
+    linewidth = 1,
+    alpha = 0.6
+  ) +
+  geom_point(size = 4) +
+  scale_x_continuous(labels = percent_format()) +
+  scale_color_brewer(palette = "Dark2", name = "Year") +
+  labs(
+    title = "Plastic Type Shares Differ Between 2019 and 2020",
+    subtitle = "Lollipop chart comparing each plastic type as a proportion of total plastic collected",
+    x = "Percent of Total Plastic",
+    y = "Plastic Type"
+  ) +
+  theme_light(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+```
+
 ### Dominant Plastic Type Table by Country in 2020
 
-Choose 2020 because its more accurate
+Chose 2020 because its more accurate (less other).
+
+**Table 1**
+
+```{r}
+plastic_types <- c("hdpe", "ldpe", "o", "pet", "pp", "ps", "pvc")
+
+dominant_plastic <- function(ctry) {
+  
+  ctry_norm <- normalize_name(ctry)
+  
+  df <- joined_all %>%
+    filter(country_key == ctry_norm) %>%
+    filter(year == 2020) %>% 
+    summarise(across(all_of(plastic_types), ~ sum(.x, na.rm = TRUE)))
+  
+  total <- sum(df, na.rm = TRUE)
+  
+  tibble(
+    country       = str_to_title(ctry_norm),
+    dominant_type = plastic_types[which.max(df)],
+    dominant_n    = max(df),
+    dominant_prop = dominant_n/total
+  )
+}
+
+top_countries <- joined_all %>% 
+  filter(year == 2020) %>% 
+  group_by(country_key) %>%
+  summarise(total = sum(grand_total, na.rm = TRUE)) %>% 
+  slice_max(total, n = 10) %>%
+  pull(country_key)
+
+top_countries %>%
+  map(dominant_plastic) %>%
+  bind_rows() %>%
+  arrange(desc(dominant_n)) %>%
+  mutate(dominant_type = dominant_type %>% 
+           recode_values(
+             "o" ~ "Other", 
+             "ldpe" ~ "Low-Density Polyethylene",
+             "hdpe" ~ "High-Density Polyethylene",
+             "pet" ~ "Polyester",
+             "pp" ~ "Polypropylene",
+             "ps" ~ "Polystyrene",
+             "pvc" ~ "PVC")
+  ) %>% 
+  gt() %>%
+  tab_header(
+    title = md("**Dominant Plastic Type for Top 10 Countries in Total Recorded Waste (2020)**")
+    ) %>%
+  tab_source_note(
+    source_note = "Most commonly recorded plastic type for the countries producing the largest amount of plastic waste in 2020." 
+  ) %>% 
+  cols_label(
+    country       = "Country",
+    dominant_type = "Dominant Plastic Type",
+    dominant_n    = "Dominant Plastic Count",
+    dominant_prop = "Percent of Country Total"
+  ) %>%
+  tab_style(
+    style     = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>%
+  fmt_number(columns = dominant_n, decimals = 0) %>% 
+  fmt_percent(columns = dominant_prop, decimals = 2)
+```
 
 
 ### Top Parent Company by country
 
-
-### Top Parent Company by continent graph
-
-
-
-
-
+**Table 2**
 
 ```{r}
 top_company_by_country <- function(ctry) {
@@ -343,6 +436,10 @@ joined_all %>%
   )
 ```
 
+### Top Parent Company by continent graph
+
+**Figure 2**
+
 ```{r}
 #| label: Top companies by region
 #| fig-alt: "Faceted bar chart showing the top five parent companies contributing to plastic waste within each region (Africa, Americas, Asia, and Europe). In all regions, 'Unbranded' plastic dominates by a large margin, especially in Asia where it far exceeds other companies. Named companies such as The Coca-Cola Company, Nestle, and Unilever appear across multiple regions but contribute substantially less than unbranded sources. Overall, the distribution is highly skewed, with a single dominant category in each region and relatively small contributions from the remaining companies."
@@ -392,64 +489,8 @@ ggplot(top_companies_region,
   )
 ```
 
-**Table 2**
 
-```{r}
-plastic_types <- c("hdpe", "ldpe", "o", "pet", "pp", "ps", "pvc")
-
-dominant_plastic <- function(ctry) {
-  
-  ctry_norm <- normalize_name(ctry)
-  
-  df <- joined_all %>%
-    filter(country_key == ctry_norm) %>%
-    summarise(across(all_of(plastic_types), ~ sum(.x, na.rm = TRUE)))
-  
-  tibble(
-    country       = str_to_title(ctry_norm),
-    dominant_type = plastic_types[which.max(df)],
-    dominant_n    = max(df)
-  )
-}
-
-top_countries <- joined_all %>% 
-  group_by(country_key) %>%
-  summarise(total = sum(grand_total, na.rm = TRUE)) %>% 
-  slice_max(total, n = 10) %>%
-  pull(country_key)
-
-top_countries %>%
-  map(dominant_plastic) %>%
-  bind_rows() %>%
-  arrange(desc(dominant_n)) %>%
-  mutate(dominant_type = dominant_type %>% 
-           recode_values(
-             "o" ~ "Other", 
-             "ldpe" ~ "Low-Density Polyethylene",
-             "hdpe" ~ "High-Density Polyethylene",
-             "pet" ~ "Polyester",
-             "pp" ~ "Polypropylene",
-             "ps" ~ "Polystyrene",
-             "pvc" ~ "PVC")
-  ) %>% 
-  gt() %>%
-  tab_header(
-    title = md("**Dominant Plastic Type for Top 10 Countries in Total Recorded Waste**")
-    ) %>%
-  tab_source_note(
-    source_note = "Most commonly recorded plastic type for the countries producing the largest amount of plastic waste" 
-  ) %>% 
-  cols_label(
-    country       = "Country",
-    dominant_type = "Dominant Plastic Type",
-    dominant_n    = "Amount of Dominant Plastic"
-  ) %>%
-  tab_style(
-    style     = cell_text(weight = "bold"),
-    locations = cells_column_labels()
-  ) %>%
-  fmt_number(columns = dominant_n, decimals = 0)
-```
+### Might not need
 
 **Table 3**
 
@@ -516,82 +557,45 @@ table3 <- table3_year |>
 table3
 ```
 
-**Figure 2**
-
-```{r}
-table3_long <- table3_year %>%
-  pivot_longer(
-    cols = -Year,
-    names_to = "plastic_type",
-    values_to = "prop"
-  )
-
-ggplot(table3_long, aes(x = prop, y = plastic_type, color = factor(Year))) +
-  geom_segment(
-    aes(x = 0, xend = prop, y = plastic_type, yend = plastic_type),
-    linewidth = 1,
-    alpha = 0.6
-  ) +
-  geom_point(size = 4) +
-  scale_x_continuous(labels = percent_format()) +
-  scale_color_brewer(palette = "Dark2", name = "Year") +
-  labs(
-    title = "Plastic Type Shares Differ Between 2019 and 2020",
-    subtitle = "Lollipop chart comparing each plastic type as a proportion of total plastic collected",
-    x = "Percent of Total Plastic",
-    y = "Plastic Type"
-  ) +
-  theme_light(base_size = 14) +
-  theme(
-    plot.title = element_text(face = "bold"),
-    axis.title = element_text(face = "bold"),
-    panel.grid.minor = element_blank()
-  )
-```
-
 ## **Research Question 2**
 
 ### Density plot of recorded Plastic by Country per Capita
 
-### Top 20 Countries by recorded Plastic Per person Table
-
-### GDP Data
-
-### Recorded Plastic By GDP per Capita scatterplot.
-
-**Figure 1**
+**Figure 3**
 
 ```{r}
-#| fig-alt: "A ridgeline density plot showing the distribution of total plastic waste per country, separated by continent. Americas has the highest peak near zero with a moderate right tail. Asia has a flatter distribution with several secondary peaks at high waste values representing individual countries producing high waste. Africa is multimodal. Europe is concentrated near zero with one outlier peak. All distributions are right-skewed."
-#| fig-cap: "Density ridge plot showing the distribution of total plastic collected across regions. Each ridge represents the distribution of country-level plastic totals within a region."
+#| fig-alt: "A ridgeline density plot showing the distribution of plastic waste per capita in pieces per person by continent, with four ridges for Europe, Americas, Asia, and Africa. All distributions are right-skewed and peak near zero plastic items recorded per person. Europe has the widest spread with several secondary peaks and one extreme outlier. Asia also has an extreme outlier at 0.010 pieces of plastic per capita. Africa is the most concentrated near zero with a slightly wider base than the others."
+#| fig-cap: "Density ridge plot showing the distribution of pieces of plastic collected per capita across regions. Each ridge represents the distribution of country-level plastic totals per capita within a region."
 
-vis_1 <- joined_all %>%
+vis_1.5 <- joined_all %>%
   filter(!is.na(region), region != "Oceania") %>% 
-  group_by(country, region) %>%
+  group_by(country, region, population) %>%
   summarize(
     total = sum(grand_total, na.rm = TRUE), .groups = "drop"
   ) %>% 
   mutate(
-    region = fct_reorder(region, total, .desc = TRUE)
+    region = fct_reorder(region, total, .desc = TRUE),
+    waste_per_capita = total/population
   ) %>% 
-  ggplot(aes(x=total, y=region, fill=region)) +
+  ggplot(aes(x=waste_per_capita, y=region, fill=region)) +
   geom_density_ridges(alpha = 0.5, height = 1, position = "identity") +
   labs(
-  title = "Total Plastic Waste by Continent",
-  subtitle = "Distribution of Total Plastic Waste by Continent",
-  x = "Total Plastic Waste (Number of Items)",
-  y = ""
+    title = "Plastic Waste per Capita by Continent",
+    subtitle = "Distribution of Plastic Waste per Capita by Continent (in Pieces/Person)",
+    x= "Plastic Waste Per Capita (Items per Person)",
+    y= ""
   ) +
-  scale_x_continuous(labels = label_comma()) +
   scale_fill_brewer(palette = "Pastel1") +
-  guides(fill = guide_legend(reverse = TRUE)) +
   theme_minimal() +
   theme(legend.position = "none")
 
-vis_1
+vis_1.5
 ```
 
-**Table 1**
+### Top 20 Countries by recorded Plastic Per person Table
+
+
+**Table 3**
 
 ```{r}
 joined2 %>%
@@ -628,7 +632,11 @@ joined2 %>%
   )
 ```
 
-**Table 2**
+
+
+### GDP Data
+
+**Table 4**
 
 ```{r}
 gdp_combo <- joined_all %>%
@@ -667,38 +675,9 @@ gdp_combo %>%
   )
 ```
 
-**Figure 1**
+### Recorded Plastic By GDP per Capita scatterplot.
 
-```{r}
-#| fig-alt: "A ridgeline density plot showing the distribution of plastic waste per capita in pieces per person by continent, with four ridges for Europe, Americas, Asia, and Africa. All distributions are right-skewed and peak near zero plastic items recorded per person. Europe has the widest spread with several secondary peaks and one extreme outlier. Asia also has an extreme outlier at 0.010 pieces of plastic per capita. Africa is the most concentrated near zero with a slightly wider base than the others."
-#| fig-cap: "Density ridge plot showing the distribution of pieces of plastic collected per capita across regions. Each ridge represents the distribution of country-level plastic totals per capita within a region."
-
-vis_1.5 <- joined_all %>%
-  filter(!is.na(region), region != "Oceania") %>% 
-  group_by(country, region, population) %>%
-  summarize(
-    total = sum(grand_total, na.rm = TRUE), .groups = "drop"
-  ) %>% 
-  mutate(
-    region = fct_reorder(region, total, .desc = TRUE),
-    waste_per_capita = total/population
-  ) %>% 
-  ggplot(aes(x=waste_per_capita, y=region, fill=region)) +
-  geom_density_ridges(alpha = 0.5, height = 1, position = "identity") +
-  labs(
-    title = "Plastic Waste per Capita by Continent",
-    subtitle = "Distribution of Plastic Waste per Capita by Continent (in Pieces/Person)",
-    x= "Plastic Waste Per Capita (Items per Person)",
-    y= ""
-  ) +
-  scale_fill_brewer(palette = "Pastel1") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-vis_1.5
-```
-
-**Figure 2**
+**Figure 4**
 
 ```{r}
 #| fig-alt: "A scatterplot comparing recorded plastic waste on the y-axis against GDP per capita on the x-axis, with points colored by continent. The majority of points are clustered near zero on both axes. One African country is a strong outlier with approximately 165,000 units of plastic waste recorded despite a very low GDP per capita below 5,000. Several Asian and Americas countries also show elevated waste counts at low GDP levels. European countries are spread across the full GDP per capita range but generally show low waste counts. No clear positive or negative relationship between GDP per capita and plastic waste is visible across the full dataset."
