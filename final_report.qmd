@@ -273,7 +273,24 @@ joined_all <- joined %>%
 
 ## **Research Question 1**
 
-**Table 1**
+### Plastic Type Distribution
+
+Shows that 2020 has better plastic classifications than 2019 (less "Other").
+
+### Dominant Plastic Type Table by Country in 2020
+
+Choose 2020 because its more accurate
+
+
+### Top Parent Company by country
+
+
+### Top Parent Company by continent graph
+
+
+
+
+
 
 ```{r}
 top_company_by_country <- function(ctry) {
@@ -533,6 +550,14 @@ ggplot(table3_long, aes(x = prop, y = plastic_type, color = factor(Year))) +
 ```
 
 ## **Research Question 2**
+
+### Density plot of recorded Plastic by Country per Capita
+
+### Top 20 Countries by recorded Plastic Per person Table
+
+### GDP Data
+
+### Recorded Plastic By GDP per Capita scatterplot.
 
 **Figure 1**
 
