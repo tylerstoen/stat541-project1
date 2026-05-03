@@ -34,6 +34,10 @@ library(scales)
 library(stringdist)
 library(tidytext)
 ```
+```{r}
+library(rsconnect)
+writeManifest()
+```
 
 # Data Context
 
@@ -317,18 +321,14 @@ table3_long <- table3_year %>%
     values_to = "prop"
   )
 
-ggplot(table3_long, aes(x = prop, y = plastic_type, color = factor(Year))) +
-  geom_segment(
-    aes(x = 0, xend = prop, y = plastic_type, yend = plastic_type),
-    linewidth = 1,
-    alpha = 0.6
-  ) +
-  geom_point(size = 4) +
+ggplot(table3_long, aes(x = prop, y = plastic_type)) +
+  geom_line(aes(group = plastic_type), color = "grey60", linewidth = 1) +  # connecting line between years
+  geom_point(aes(color = factor(Year)), size = 4) +
   scale_x_continuous(labels = percent_format()) +
   scale_color_brewer(palette = "Dark2", name = "Year") +
   labs(
     title = "Figure 1. Composition of Plastic Waste by Type in 2019 vs. 2020",
-    subtitle = "Lollipop chart comparing each plastic type as a proportion of total plastic collected",
+    subtitle = "Dumbbell chart comparing each plastic type as a proportion of total plastic collected",
     x = "Percent of Total Plastic",
     y = "Plastic Type"
   ) +
