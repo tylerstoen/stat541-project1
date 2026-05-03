@@ -530,6 +530,8 @@ The distribution of plastic waste across companies shows strong concentration wi
 
 ## **Research Question 2**
 
+Our second research question, investigates the effect of country location and both social and economic development on the amount of recorded plastic.
+
 ### Figure 3: Density Plot of Recorded Plastic by Country per Capita
 
 ```{r}
@@ -562,9 +564,11 @@ vis_1.5 <- joined_all %>%
 vis_1.5
 ```
 
-Geographic patterns show clear differences in plastic waste across regions. As seen in Figure 3, countries in Europe and the Americas tend to have higher plastic waste per capita and less variability, while Africa and much of Asia are less concentrated at lower levels and have more variability. This suggests that geography plays a meaningful role, with more developed regions generally producing more waste per person.
+Geographic patterns show clear differences in plastic waste across regions. As seen in Figure 3, continents across the board seem to have waste per capita distributions peaked at very similar levels. Countries in Europe seem to have a few outlier countries, including some extreme outliers, having extremely high plastic waste per capita. Africa and much of Asia are less concentrated at lower levels, having more variability and skewed per capita recorded waste distributions. Finally, America has the most symmetric distribution, with low average waste per capita and few outliers.
 
 ### Table 4: Top 20 Countries by Recorded Plastic Per Person Table
+
+To help deterimine the source of these extreme outliers, ...
 
 ```{r}
 joined_all %>%
