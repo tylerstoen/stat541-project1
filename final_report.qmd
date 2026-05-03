@@ -1,5 +1,5 @@
 ---
-title: "Project 1 Final Deliverable"
+title: "Plastic Waste Collection Records Report"
 author: "Faran Igani and Tyler Stoen"
 format:
   html:
