@@ -104,7 +104,7 @@ plastics_clean <- plastics %>%
   mutate(country_key = normalize_name(country))
 
 restcountries_clean <- restcountries_tidy %>% 
-  select(name.common, name.official, region, subregion,
+  dplyr::select(name.common, name.official, region, subregion,
          density, unMember, geolocation.latitude, 
          geolocation.longitude) %>% 
   mutate(common_key = recode(
@@ -118,17 +118,17 @@ restcountries_clean <- restcountries_tidy %>%
 
 joined <- plastics_clean %>%
   left_join(
-    restcountries_clean %>% select(-official_key),
+    restcountries_clean %>% dplyr::select(-official_key),
     by = c("country_key" = "common_key")
   )
 
 matched <- joined %>% filter(!is.na(region))
 unmatched <- joined %>% filter(is.na(region)) %>%
-  select(names(plastics_clean))
+  dplyr::select(names(plastics_clean))
 
 refilled <- unmatched %>%
   left_join(
-    restcountries_clean %>% select(-common_key),
+    restcountries_clean %>% dplyr::select(-common_key),
     by = c("country_key" = "official_key")
   )
 
@@ -193,14 +193,15 @@ name_map <- tibble(original = companies_raw) %>%
 canonical_labels <- name_map %>%
   count(canonical, original) %>%          # count how often each original appears
   slice_max(n, by = canonical, n = 1, with_ties = FALSE) %>% # pick the most frequent per canonical
-  select(canonical, display_name = original)
+  dplyr::select(canonical, display_name = original)
 
 joined <- joined1 %>%
-  left_join(name_map %>% select(original, canonical),
+  left_join(name_map %>% dplyr::select(original, canonical),
             by = c("parent_company" = "original")) %>%
   left_join(canonical_labels, by = "canonical") %>% 
   mutate(parent_company = display_name) %>% 
-  select(-display_name, -canonical)
+  dplyr::select(-display_name, -canonical) %>% 
+  mutate(country = str_to_title(country_key))
 ```
 
 ### API 2: worldbank
@@ -223,7 +224,7 @@ pop_raw <- GET(pop_url) %>%
   fromJSON(flatten = TRUE) %>%
   pluck(2) %>% 
   as_tibble() %>% 
-  select(
+  dplyr::select(
     country.value,
     year = date,
     population = value
@@ -236,7 +237,7 @@ gdp_raw <- GET(gdp_url) %>%
   fromJSON(flatten = TRUE) %>% 
   pluck(2) %>% 
   as_tibble() %>% 
-  select(
+  dplyr::select(
     country.value,
     year = date,
     gdp = value
@@ -265,7 +266,7 @@ joined_all <- joined %>%
 
 # Research Questions
 
--   What are the characteristics of recorded plastic waste, in terms of the companies most responsible for the waste and the plastic types most commonly collected?
+-   What are the characteristics of recorded plastic waste, specifically in terms of the companies most responsible for the waste and the plastic types most commonly collected?
 
 -   How does country geography and economic status effect their amount of recorded plastic waste? Do more developed countries in terms of GDP and population tend to have more or less recorded waste?
 
@@ -273,13 +274,46 @@ joined_all <- joined %>%
 
 ## **Research Question 1**
 
-### Plastic Type Distribution
+To investigate the characteristics of recorded plastic waste, we examine two aspects: the companies responsible for the waste and the types of plastic collected. 
 
-Shows that 2020 has better plastic classifications than 2019 (less "Other").
+### Figure 1: Plastic Type Distribution
 
-**Figure 1**
+In this dataset, plastics were categorized into eight types — High-Density Polyethylene (HDPE), Low-Density Polyethylene (LDPE), Other (O), Polyethylene Terephthalate (PET), Polypropylene (PP), Polystyrene (PS), Polyvinyl Chloride (PVC), and Empty (items with no plastic type recorded). Figure 1 displays each plastic type as a proportion of total plastic collected, comparing 2019 and 2020.
 
 ```{r}
+calc_prop <- function(var, data) {
+  data %>%
+    filter(grand_total > 0, parent_company != "Grand Total") %>%
+    group_by(year) %>%
+    summarise(
+      prop = sum(.data[[var]], na.rm = TRUE) / sum(grand_total, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(plastic_type = var)
+}
+
+plastic_vars <- c("empty", "hdpe", "ldpe", "o", "pet", "pp", "ps", "pvc")
+
+table3_year <- map_dfr(plastic_vars, calc_prop, data = plastics) %>%
+  mutate(
+    plastic_type = recode(
+      plastic_type,
+      empty = "Empty",
+      hdpe = "HDPE",
+      ldpe = "LDPE",
+      o = "Other",
+      pet = "PET",
+      pp = "PP",
+      ps = "PS",
+      pvc = "PVC"
+    )
+  ) %>%
+  pivot_wider(
+    names_from = plastic_type,
+    values_from = prop
+  ) %>%
+  rename(Year = year)
+
 table3_long <- table3_year %>%
   pivot_longer(
     cols = -Year,
@@ -297,24 +331,24 @@ ggplot(table3_long, aes(x = prop, y = plastic_type, color = factor(Year))) +
   scale_x_continuous(labels = percent_format()) +
   scale_color_brewer(palette = "Dark2", name = "Year") +
   labs(
-    title = "Plastic Type Shares Differ Between 2019 and 2020",
+    title = "Figure 1. Composition of Plastic Waste by Type in 2019 vs. 2020",
     subtitle = "Lollipop chart comparing each plastic type as a proportion of total plastic collected",
     x = "Percent of Total Plastic",
     y = "Plastic Type"
   ) +
   theme_light(base_size = 14) +
   theme(
-    plot.title = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", size = 14),
     axis.title = element_text(face = "bold"),
     panel.grid.minor = element_blank()
   )
 ```
 
-### Dominant Plastic Type Table by Country in 2020
+Figure 1 displays each plastic type as a proportion of total plastic collected, comparing 2019 and 2020. The most striking pattern is the dominance of the "Other" category, which accounts for approximately 60% of all recorded plastic in 2019. Notably, this percentage dips to below 40% in 2020. A shift of this magnitude in a year time frame is unlikely to reflect a true change in plastic distribution, and more plausibly reflects improved plastic type recording between years. Among the named types, PET and PP represent the largest shares, which is consistent with their widespread use in beverage bottles and food packaging. Other plastic types such as PVC and Polystyrene make up a very small percentage of collected waste, possibly due to their niche use and typically larger size. Overall, these results indicate that plastic waste is not evenly distributed across types, but instead concentrated among a few categories, highlighting important patterns in material waste distribution.
 
-Chose 2020 because its more accurate (less other).
+### Table 1: Dominant Plastic Type Table by Country in 2020
 
-**Table 1**
+As seen in Figure 1, the proportion of plastic recorded under the "Other" category dropped substantially in 2020, suggesting more consistent and complete plastic type classification compared to 2019. For this reason, 2020 data is used for the country-level breakdown in Table 1, as it better reflects the true distribution of plastic types across named categories.
 
 ```{r}
 plastic_types <- c("hdpe", "ldpe", "o", "pet", "pp", "ps", "pvc")
@@ -361,7 +395,7 @@ top_countries %>%
   ) %>% 
   gt() %>%
   tab_header(
-    title = md("**Dominant Plastic Type for Top 10 Countries in Total Recorded Waste (2020)**")
+    title = md("**Table 1. Dominant Plastic Type for Top 10 Countries in Total Recorded Waste (2020)**")
     ) %>%
   tab_source_note(
     source_note = "Most commonly recorded plastic type for the countries producing the largest amount of plastic waste in 2020." 
@@ -380,10 +414,11 @@ top_countries %>%
   fmt_percent(columns = dominant_prop, decimals = 2)
 ```
 
+Plastic waste at the country level is often dominated by a single plastic type, with many of the top countries in recorded waste showing very high concentration in one category. Countries where "Other" is the dominant category, such as Switzerland and the United States, are harder to draw conclusions from, as "Other" likely includes many different plastic types that were not individually classified. In contrast, countries where a specific named type dominates are more informative. For example, Ghana and Kenya show over 88% of their recorded waste classified as Polyester, and the Philippines and Indonesia show Polypropylene as the dominant type with 77% and 29% respectively. These specific classifications suggest meaningful differences in the types of plastic products entering the waste stream across countries, potentially reflecting differences in local consumer goods and local production.
 
-### Top Parent Company by country
+### Table 2: Top Parent Company by Country
 
-**Table 2**
+As previously noted, waste was also tracked by parent company where possible. Identifying the companies behind recorded plastic waste is important not just for understanding composition, but for accountability. Knowing which corporations contribute most to plastic pollution in specific countries could help regulate and corporate waste efforts. Table 2 below shows the top contributing company by country, measured as a percentage of that country's total recorded waste.
 
 ```{r}
 top_company_by_country <- function(ctry) {
@@ -414,7 +449,7 @@ joined_all %>%
   map(top_company_by_country) %>% 
   list_rbind() %>% 
   filter(!is.nan(percent)) %>%
-  select(country, parent_company, percent) %>% 
+  dplyr::select(country, parent_company, percent) %>% 
   arrange(desc(percent)) %>% 
   gt() %>% 
   cols_label(
@@ -428,7 +463,7 @@ joined_all %>%
   ) %>% 
   fmt_percent(columns = percent, decimals = 2) %>% 
   tab_header(
-    title = md("**Company's Contributing
+    title = md("**Table 2. Company's Contributing
                  the Most Recorded Waste by Country**")
   ) %>% 
   tab_source_note(
@@ -436,9 +471,11 @@ joined_all %>%
   )
 ```
 
-### Top Parent Company by continent graph
+Plastic waste at the country level is often dominated by a single parent company, with several countries showing extremely high concentration. In multiple cases, including Côte d’Ivoire, Cyprus, and Honduras, one company accounts for 100% of the recorded waste, however this likely reflects limited collection coverage. Despite this, other countries still show strong dominance with shares exceeding 80% such as South Africa. These patterns suggest that plastic waste generation is not evenly distributed across producers, but instead concentrated among a small number of companies within each country. For example, The Coca-Cola Company appears as the top contributor in the largest number of countries, spanning regions including Europe, Asia, Africa, and the Americas, reinforcing its status as one of the most frequently identified sources of plastic waste globally.
 
-**Figure 2**
+### Figure 2: Top Parent Company by Continent Graph
+
+While Table 2 highlighted the dominant company within each individual country, Figure 2 broadens this view by aggregating recorded plastic waste to the regional level, showing the top 5 contributing companies across Africa, the Americas, Asia, and Europe. This allows us to identify which companies not only dominate locally but maintain a significant plastic footprint across entire regions.
 
 ```{r}
 #| label: Top companies by region
@@ -475,9 +512,9 @@ ggplot(top_companies_region,
   labels = label_number(scale = 1e-3, suffix = "K")
 ) + 
   labs(
-    title = "Top Parent Companies in Recorded Plastic Waste by Region",
+    title = "Figure 2. Top Parent Companies in Recorded Plastic Waste by Region",
     subtitle = "Top 5 companies with the highest recorded plastic waste in each region",
-    x = "Total Plastic Collected",
+    x = "Total Plastic (Numbet of Items)",
     y = NULL
   ) +
   scale_fill_brewer(palette = "Dark2") +
@@ -489,11 +526,11 @@ ggplot(top_companies_region,
   )
 ```
 
+The distribution of plastic waste across companies shows strong concentration within regions, with only a handful of firms accounting for the majority of recorded waste. While global corporations such as The Coca-Cola Company, Nestlé, and PepsiCo appear across multiple regions, regional companies also play a dominant role, particularly in Africa and Asia. This indicates that plastic waste patterns are driven by both international supply chains and localized production and consumption, reinforcing the importance of targeting key companies in efforts to reduce waste.
+
 ## **Research Question 2**
 
-### Density plot of recorded Plastic by Country per Capita
-
-**Figure 3**
+### Figure 3: Density Plot of Recorded Plastic by Country per Capita
 
 ```{r}
 #| fig-alt: "A ridgeline density plot showing the distribution of plastic waste per capita in pieces per person by continent, with four ridges for Europe, Americas, Asia, and Africa. All distributions are right-skewed and peak near zero plastic items recorded per person. Europe has the widest spread with several secondary peaks and one extreme outlier. Asia also has an extreme outlier at 0.010 pieces of plastic per capita. Africa is the most concentrated near zero with a slightly wider base than the others."
@@ -512,26 +549,26 @@ vis_1.5 <- joined_all %>%
   ggplot(aes(x=waste_per_capita, y=region, fill=region)) +
   geom_density_ridges(alpha = 0.5, height = 1, position = "identity") +
   labs(
-    title = "Plastic Waste per Capita by Continent",
+    title = "Figure 3. Plastic Waste per Capita by Continent",
     subtitle = "Distribution of Plastic Waste per Capita by Continent (in Pieces/Person)",
     x= "Plastic Waste Per Capita (Items per Person)",
     y= ""
   ) +
   scale_fill_brewer(palette = "Pastel1") +
   theme_minimal() +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold", size = 14))
 
 vis_1.5
 ```
 
-### Top 20 Countries by recorded Plastic Per person Table
+Geographic patterns show clear differences in plastic waste across regions. As seen in Figure 3, countries in Europe and the Americas tend to have higher plastic waste per capita and less variability, while Africa and much of Asia are less concentrated at lower levels and have more variability. This suggests that geography plays a meaningful role, with more developed regions generally producing more waste per person.
 
-
-**Table 3**
+### Table 4: Top 20 Countries by Recorded Plastic Per Person Table
 
 ```{r}
-joined2 %>%
-  group_by(country, year) %>%
+joined_all %>%
+  group_by(country) %>%
   summarise(
     total_plastic = sum(grand_total, na.rm = TRUE),
     population = mean(population, na.rm = TRUE),
@@ -543,7 +580,6 @@ joined2 %>%
   gt() %>% 
   cols_label(
     country = md("**Country**"),
-    year = md("**Year**"),
     total_plastic = md("**Total Plastic**"),
     population = md("**Population**"),
     plastic_per_person = md("**Plastic per Person**")
@@ -557,59 +593,22 @@ joined2 %>%
     decimals = 5
   ) %>% 
   tab_header(
-    title = md("**Top 20 Countries by Plastic Contributed per Person**")
+    title = md("**Table 4. Top 20 Countries by Plastic Contributed per Person**")
   ) %>% 
   tab_source_note(
     source_note = "Plastic per person was calculated as total plastic collected divided by population."
   )
 ```
 
+Table 4 reinforces this pattern by highlighting the countries with the highest plastic waste recovered per person. Many of the top contributors, such as Switzerland, Latvia, and Montenegro, are either developed or smaller countries with relatively high per capita plastic recovery, suggesting that higher standards of living may be associated with increased plastic use on a per-person basis. However, the presence of countries like Bhutan and Togo indicates that high per capita waste is not limited exclusively to the most economically developed nations.
 
-
-### GDP Data
-
-**Table 4**
+### Table 5: GDP Data
 
 ```{r}
-gdp_combo <- joined_all %>%
-  filter(!is.na(gdp), !is.na(gdppercapita), !is.na(country)) %>%
-  group_by(country, year) %>%
-  summarise(
-    gdp = mean(gdp, na.rm = TRUE),
-    gdp_per_capita = mean(gdppercapita, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  arrange(desc(gdp))
 
-gdp_combo %>%
-  gt() %>%
-  cols_label(
-    country = md("**Country**"),
-    year = md("**Year**"),
-    gdp = md("**GDP (USD)**"),
-    gdp_per_capita = md("**GDP per Capita (USD)**")
-  ) %>%
-  fmt_currency(
-    columns = gdp,
-    currency = "USD",
-    decimals = 0
-  ) %>%
-  fmt_currency(
-    columns = gdp_per_capita,
-    currency = "USD",
-    decimals = 0
-  ) %>%
-  tab_header(
-    title = md("**GDP and GDP per Capita by Country and Year**")
-  ) %>%
-  tab_source_note(
-    source_note = "GDP and GDP per capita values are reported in current U.S. dollars from the World Bank."
-  )
 ```
 
-### Recorded Plastic By GDP per Capita scatterplot.
-
-**Figure 4**
+### Figure 4: Recorded Plastic By GDP per Capita Scatterplot.
 
 ```{r}
 #| fig-alt: "A scatterplot comparing recorded plastic waste on the y-axis against GDP per capita on the x-axis, with points colored by continent. The majority of points are clustered near zero on both axes. One African country is a strong outlier with approximately 165,000 units of plastic waste recorded despite a very low GDP per capita below 5,000. Several Asian and Americas countries also show elevated waste counts at low GDP levels. European countries are spread across the full GDP per capita range but generally show low waste counts. No clear positive or negative relationship between GDP per capita and plastic waste is visible across the full dataset."
@@ -631,14 +630,14 @@ vis_2 <- joined_all %>%
   ) +
   coord_cartesian(ylim = c(0, 180000)) +
   labs(
-    title = "Higher-Income Countries Show Wide Variation in Plastic Waste",
+    title = "Figure 4. Higher-Income Countries Show Wide Variation in Plastic Waste",
     subtitle = "Country-level totals of recorded plastic waste vs GDP per capita",
     x = "GDP per Capita (USD)",
     y = "Total Plastic Waste"
   ) +
   theme_light(base_size = 15) +
   theme(
-    plot.title = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", size = 14),
     plot.subtitle = element_text(size = 11),
     axis.title = element_text(face = "bold"),
     panel.grid.minor = element_blank()
@@ -646,6 +645,12 @@ vis_2 <- joined_all %>%
 
 vis_2
 ```
+
+Figure 4. shows shows the relationship between GDP per capita and total recorded plastic waste at the country level, with points colored by world region. Overall, there is a weak positive relationship, where countries with higher GDP per capita tend to have higher plastic waste, but the pattern is highly variable.
+
+Countries with lower GDP per capita are tightly clustered near lower levels of plastic waste, particularly in Africa and parts of Asia. In contrast, higher-income countries, especially in Europe and the Americas, display much greater spread, with some countries generating very high levels of waste while others remain relatively low. This wide dispersion among wealthier countries suggests that economic development alone does not fully explain differences in plastic waste, and that other regional or structural factors are likely influencing the observed variation.
+
+Overall, more developed countries tend to generate higher plastic waste, particularly on a per capita basis, but geography plays a more dominant role in explaining variation. This suggests that regional systems such as waste management, production practices, and consumption behavior are key factors driving differences in recorded plastic waste across countries.
 
 # Data Model
 
@@ -691,7 +696,7 @@ library(broom)
 library(gt)
 
 model_table <- tidy(plastic_model, conf.int = TRUE) %>%
-  select(term, estimate, std.error, statistic, p.value, conf.low, conf.high)
+  dplyr::select(term, estimate, std.error, statistic, p.value, conf.low, conf.high)
 
 model_gt <- model_table %>%
   gt() %>%
@@ -713,17 +718,17 @@ model_gt <- model_table %>%
     decimals = 4
   ) %>%
   tab_header(
-    title = md("**Regression Model for Log Total Plastic Collected**")
+    title = md("**Regression Model for Log Total Plastic**")
   ) %>%
   tab_source_note(
-    source_note = "Linear regression model predicting log total plastic collected from GDP, population density, and region."
+    source_note = "Linear regression model predicting log total plastic from GDP and region."
   )
 
 model_gt
 ```
 
-This model examines how economic factors (GDP), population density, and geographic region are associated with plastic waste. The coefficient for log GDP is positive (β = 0.271), suggesting that countries with higher economic output tend to have higher levels of plastic waste. This relationship is only marginally significant (p = 0.0619), however still moderate evidence of an association at the 5% level In contrast, population density does not appear to be a meaningful predictor (β = −0.030, p = 0.9147), suggesting that more densely populated countries do not necessarily generate more plastic waste after accounting for other variables.
+This model examines how economic factors (GDP), population density, and geographic region are associated with plastic waste. The coefficient for log GDP is positive (β = 0.268), suggesting that countries with higher economic output tend to have higher levels of plastic waste. This relationship is only marginally significant (p = 0.0597), however still moderate evidence of an association at the 5% level.
 
-Regional effects show clearer patterns. Compared to the reference region (Africa), countries in Asia (β = −1.662, p = 0.0469), Europe (β = −2.108, p = 0.0057), and Oceania (β = −4.601, p = 0.0344) have significantly lower levels of plastic waste, holding other variables constant. The Americas also show a negative relationship (β = −1.802), with moderate significant (p = 0.0587). These results suggest that geographic differences play an important role in plastic waste patterns, potentially reflecting differences in waste management systems, consumption behaviors, or environmental policies.
+Regional effects show clearer patterns. Compared to the reference region (Africa), countries in the Americas (β = −1.767, p = 0.0476), Asia (β = −1.689, p = 0.0336), Europe (β = −2.107, p = 0.0055), and Oceania (β = −4.502, p = 0.0216) all have significantly lower levels of plastic waste, holding GDP constant. These results suggest that geographic differences play an important role in plastic waste patterns, potentially reflecting differences in waste management systems, consumption behaviors, or environmental policies.
 
-Overall, the model provides evidence that regional factors are more strongly associated with plastic waste than population density, while economic activity shows a weaker but suggestive relationship. This addresses our research questions by indicating that both economic and geographic context contribute to variation in plastic waste across countries, with region emerging as a key driver.
+Overall, the model provides evidence that regional factors are more strongly associated with plastic waste than economic activity, while GDP shows a weaker but suggestive relationship. This addresses our research question by indicating that both economic and geographic context contribute to variation in plastic waste across countries, with region emerging as an important factor.
