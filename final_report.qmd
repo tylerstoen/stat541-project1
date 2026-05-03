@@ -62,6 +62,8 @@ The additional country-level data were retrieved from the REST Countries API, wh
 
 ```{r}
 #| label: data-from-api
+#| message: FALSE
+#| warning: FALSE
 
 base_url <- "https://restcountries.com/v4/"
 
