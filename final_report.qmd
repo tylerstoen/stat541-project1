@@ -35,10 +35,6 @@ library(stringdist)
 library(tidytext)
 ```
 
-## Github URL
-
-<https://github.com/FaranIgani/STAT-541---Project-1>
-
 # Data Context
 
 ```{r}
