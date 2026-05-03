@@ -411,7 +411,12 @@ top_countries %>%
     locations = cells_column_labels()
   ) %>%
   fmt_number(columns = dominant_n, decimals = 0) %>% 
-  fmt_percent(columns = dominant_prop, decimals = 2)
+  fmt_percent(columns = dominant_prop, decimals = 2) %>%
+  data_color(
+    columns = dominant_prop,
+    method  = "numeric",
+    palette = c("#fff5eb", "#d94701")
+  )
 ```
 
 Plastic waste at the country level is often dominated by a single plastic type, with many of the top countries in recorded waste showing very high concentration in one category. Countries where "Other" is the dominant category, such as Switzerland and the United States, are harder to draw conclusions from, as "Other" likely includes many different plastic types that were not individually classified. In contrast, countries where a specific named type dominates are more informative. For example, Ghana and Kenya show over 88% of their recorded waste classified as Polyester, and the Philippines and Indonesia show Polypropylene as the dominant type with 77% and 29% respectively. These specific classifications suggest meaningful differences in the types of plastic products entering the waste stream across countries, potentially reflecting differences in local consumer goods and local production.
@@ -549,14 +554,14 @@ vis_1.5 <- joined_all %>%
     waste_per_capita = total/population
   ) %>% 
   ggplot(aes(x=waste_per_capita, y=region, fill=region)) +
-  geom_density_ridges(alpha = 0.5, height = 1, position = "identity") +
+  geom_density_ridges(alpha = 0.5, height = 0.1, position = "identity") +
   labs(
     title = "Figure 3. Plastic Waste per Capita by Continent",
     subtitle = "Distribution of Plastic Waste per Capita by Continent (in Pieces/Person)",
     x= "Plastic Waste Per Capita (Items per Person)",
     y= ""
   ) +
-  scale_fill_brewer(palette = "Pastel1") +
+  scale_fill_brewer(palette = "Dark2") +
   theme_minimal() +
   theme(legend.position = "none",
         plot.title = element_text(face = "bold", size = 14))
@@ -566,9 +571,9 @@ vis_1.5
 
 Geographic patterns show clear differences in plastic waste across regions. As seen in Figure 3, continents across the board seem to have waste per capita distributions peaked at very similar levels. Countries in Europe seem to have a few outlier countries, including some extreme outliers, having extremely high plastic waste per capita. Africa and much of Asia are less concentrated at lower levels, having more variability and skewed per capita recorded waste distributions. Finally, America has the most symmetric distribution, with low average waste per capita and few outliers.
 
-### Table 4: Top 20 Countries by Recorded Plastic Per Person Table
+### Table 3: Top 20 Countries by Recorded Plastic Per Person Table
 
-To help deterimine the source of these extreme outliers, ...
+To investigate the extreme outliers outlined by Figure 3, Table 3 normalizes recorded plastic waste by population, expressing each country's total as plastic items collected per person.
 
 ```{r}
 joined_all %>%
@@ -597,22 +602,78 @@ joined_all %>%
     decimals = 5
   ) %>% 
   tab_header(
-    title = md("**Table 4. Top 20 Countries by Plastic Contributed per Person**")
+    title = md("**Table 3. Top 20 Countries by Plastic Contributed per Person**")
   ) %>% 
   tab_source_note(
     source_note = "Plastic per person was calculated as total plastic collected divided by population."
   )
 ```
 
-Table 4 reinforces this pattern by highlighting the countries with the highest plastic waste recovered per person. Many of the top contributors, such as Switzerland, Latvia, and Montenegro, are either developed or smaller countries with relatively high per capita plastic recovery, suggesting that higher standards of living may be associated with increased plastic use on a per-person basis. However, the presence of countries like Bhutan and Togo indicates that high per capita waste is not limited exclusively to the most economically developed nations.
+Montenegro, despite being one of the smallest countries in the dataset with a population of just over 600,000, ranks first in plastic per person at 0.017 items per person, suggesting an unusually concentrated collection effort relative to its size. Similarly, Bhutan and Switzerland rank highly despite modest absolute totals, while large-population countries like Nigeria and the Philippines, which appeared prominent in earlier figures, drop considerably when population is accounted for. This suggests that high total waste records in some countries occur due to population size and collection scale rather than disproportionate waste per-person.
 
-### Table 5: GDP Data
+### Table 4: GDP Data
+
+Given the results from Table 3, where countries with higher absolute plastic totals tended to be smaller, wealthier nations like Montenegro and Switzerland, Table 4 investigates this pattern more formally by grouping countries into GDP per capita income brackets. This allows for a cleaner comparison of whether wealthier nations tend to generate more or less recorded plastic waste per person.
 
 ```{r}
+# GDP per capita income brackets
+income_breaks <- c(0, 10000, 20000, 40000, Inf)
+income_labels <- c("Low (<$10K)", "Lower-Middle ($10K-$20K)", 
+                   "Upper-Middle ($20K-$40K)", "High (>$40K)")
 
+country_level <- joined_all %>%
+  filter(!(parent_company %in% c("Grand Total", "null", "Unbranded", "Assorted", "NULL"))) %>%
+  group_by(country, region, gdppercapita, population) %>%
+  summarise(total_plastic = sum(grand_total, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    plastic_per_capita = total_plastic / population,
+    income_group = cut(gdppercapita, breaks = income_breaks, labels = income_labels)
+  )
+
+# Custom function: summary stats for one income group
+summarise_income_group <- function(group_name) {
+  country_level %>%
+    filter(income_group == group_name) %>%
+    summarise(
+      income_group        = group_name,
+      n_countries         = n(),
+      avg_gdp_per_capita  = mean(gdppercapita, na.rm = TRUE),
+      avg_plastic_per_capita = mean(plastic_per_capita, na.rm = TRUE),
+      median_plastic_per_capita = median(plastic_per_capita, na.rm = TRUE),
+      total_plastic       = sum(total_plastic, na.rm = TRUE)
+    )
+}
+
+income_summary <- income_labels %>%
+  map(summarise_income_group) %>%
+  list_rbind()
+
+income_summary %>%
+  gt() %>%
+  cols_label(
+    income_group = md("**Income Group**"),
+    n_countries = md("**Countries**"),
+    avg_gdp_per_capita = md("**Avg GDP per Capita (USD)**"),
+    avg_plastic_per_capita = md("**Avg Plastic per Person**"),
+    median_plastic_per_capita = md("**Median Plastic per Person**"),
+    total_plastic = md("**Total Plastic**")
+  ) %>%
+  fmt_currency(columns = avg_gdp_per_capita, currency = "USD", decimals = 0) %>%
+  fmt_number(columns = c(avg_plastic_per_capita, median_plastic_per_capita), decimals = 5) %>%
+  fmt_number(columns = total_plastic, decimals = 0) %>%
+  tab_header(
+    title = md("**Table 4. Per Capita Recorded Plastic Waste by Economic Group**")
+  ) %>%
+  tab_source_note(
+    source_note = "Countries grouped by GDP per capita using World Bank income thresholds. Recorded plastic per person calculated as total recorded items divided by population."
+  )
 ```
 
+Table 4 reveals no clear pattern, after accounting for outliers at both ends of the income spectrum. The Low income group (<$10K GDP per capita) shows the highest average plastic per person at 0.00022, however the large gap between the mean (0.00022) and median (0.00003) confirms this is inflated by a small number of countries. Countries like Montenegro and Bhutan, identified in Table 3, are the likely culprits, where small populations amplify per capita figures even when absolute totals are modest. Comparing medians, the income groups do not seem to have a clear trend in plastic per capita.
+
 ### Figure 4: Recorded Plastic By GDP per Capita Scatterplot.
+
+To confirm that there is no trend in GDP, the Figure 4 shows the relationship between GDP per capita and total recorded plastic waste at the country level, with points colored by world region.
 
 ```{r}
 #| fig-alt: "A scatterplot comparing recorded plastic waste on the y-axis against GDP per capita on the x-axis, with points colored by continent. The majority of points are clustered near zero on both axes. One African country is a strong outlier with approximately 165,000 units of plastic waste recorded despite a very low GDP per capita below 5,000. Several Asian and Americas countries also show elevated waste counts at low GDP levels. European countries are spread across the full GDP per capita range but generally show low waste counts. No clear positive or negative relationship between GDP per capita and plastic waste is visible across the full dataset."
@@ -650,11 +711,9 @@ vis_2 <- joined_all %>%
 vis_2
 ```
 
-Figure 4. shows shows the relationship between GDP per capita and total recorded plastic waste at the country level, with points colored by world region. Overall, there is a weak positive relationship, where countries with higher GDP per capita tend to have higher plastic waste, but the pattern is highly variable.
+Based on Figure 4, here is a weak positive relationship if any, where countries with higher GDP per capita tend to have slightly higher plastic waste, but the pattern is highly variable.
 
 Countries with lower GDP per capita are tightly clustered near lower levels of plastic waste, particularly in Africa and parts of Asia. In contrast, higher-income countries, especially in Europe and the Americas, display much greater spread, with some countries generating very high levels of waste while others remain relatively low. This wide dispersion among wealthier countries suggests that economic development alone does not fully explain differences in plastic waste, and that other regional or structural factors are likely influencing the observed variation.
-
-Overall, more developed countries tend to generate higher plastic waste, particularly on a per capita basis, but geography plays a more dominant role in explaining variation. This suggests that regional systems such as waste management, production practices, and consumption behavior are key factors driving differences in recorded plastic waste across countries.
 
 # Data Model
 
