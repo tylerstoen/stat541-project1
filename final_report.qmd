@@ -1,5 +1,5 @@
 ---
-title: "Plastic Waste Collection Records Report"
+title: "World Plastic Waste Collection Records"
 author: "Faran Igani and Tyler Stoen"
 format:
   html:
@@ -7,14 +7,12 @@ format:
     embed-resources: true
     code-fold: true
     code-summary: "Show the code"
-editor: visual
+editor: source
 code-tools: true
 execute:
   warning: false
   message: false
 ---
-
-## Packages and Data
 
 ```{r}
 #| code-fold: true
@@ -34,10 +32,6 @@ library(scales)
 library(stringdist)
 library(tidytext)
 ```
-```{r}
-library(rsconnect)
-writeManifest()
-```
 
 # Data Context
 
@@ -54,7 +48,7 @@ The data was cleaned by first combining multiple country-level CSV files for eac
 
 On top of the data cleaning done as preparation, there were some observations with missing data. In many of the cases, plastic was all classified under "other", which provides an incorrect split of plastic types. This proves problematic for visualizing things like the split of plastic types because these plastics are almost certainly classified incorrectly. It would be misleading to replace these with zeros when investigating different plastic types, so instead we likely have to drop these rows to maintain correctness.
 
-## Data from API
+## Supplementary Country & Economic Data
 
 ### API 1: restcountries.com
 
@@ -64,6 +58,7 @@ The additional country-level data were retrieved from the REST Countries API, wh
 #| label: data-from-api
 #| message: FALSE
 #| warning: FALSE
+#| output: FALSE
 
 base_url <- "https://restcountries.com/v4/"
 
@@ -268,15 +263,15 @@ joined_all <- joined %>%
 
 # Research Questions
 
--   What are the characteristics of recorded plastic waste, specifically in terms of the companies most responsible for the waste and the plastic types most commonly collected?
+- What are the characteristics of recorded plastic waste, specifically in terms of the companies most responsible for the waste and the plastic types most commonly collected?
 
--   How does country geography and economic status effect their amount of recorded plastic waste? Do more developed countries in terms of GDP and population tend to have more or less recorded waste?
+- How does country geography and economic status effect their amount of recorded plastic waste? Do more developed countries in terms of GDP and population tend to have more or less recorded waste?
 
-# Data Summaries & Visualizations
+# Findings
 
-## **Research Question 1**
+## What Types of Plastic Are Collected, and Who Produces Them?
 
-To investigate the characteristics of recorded plastic waste, we examine two aspects: the companies responsible for the waste and the types of plastic collected. 
+To investigate the characteristics of recorded plastic waste, we examine two aspects: the companies responsible for the waste and the types of plastic collected.
 
 ### Figure 1: Plastic Type Distribution
 
@@ -471,6 +466,10 @@ joined_all %>%
   ) %>% 
   tab_source_note(
     source_note = "Parent company with the largest number of recorded waste items in each country." 
+  ) %>% 
+  opt_interactive(
+    use_pagination = TRUE,
+    page_size_default = 10    # number of rows shown at once
   )
 ```
 
@@ -517,7 +516,7 @@ ggplot(top_companies_region,
   labs(
     title = "Figure 2. Top Parent Companies in Recorded Plastic Waste by Region",
     subtitle = "Top 5 companies with the highest recorded plastic waste in each region",
-    x = "Total Plastic (Numbet of Items)",
+    x = "Total Plastic (Number of Items)",
     y = NULL
   ) +
   scale_fill_brewer(palette = "Dark2") +
@@ -531,11 +530,13 @@ ggplot(top_companies_region,
 
 The distribution of plastic waste across companies shows strong concentration within regions, with only a handful of firms accounting for the majority of recorded waste. While global corporations such as The Coca-Cola Company, Nestlé, and PepsiCo appear across multiple regions, regional companies also play a dominant role, particularly in Africa and Asia. This indicates that plastic waste patterns are driven by both international supply chains and localized production and consumption, reinforcing the importance of targeting key companies in efforts to reduce waste.
 
-## **Research Question 2**
+## Does Geography or Wealth Predict Recorded Plastic Waste?
 
 Our second research question, investigates the effect of country location and both social and economic development on the amount of recorded plastic.
 
-### Figure 3: Density Plot of Recorded Plastic by Country per Capita
+### Figure 3: Plastic Waste per Capita Across World Regions
+
+To address the geographic dimension of our research question, Figure 3 examines how recorded plastic waste per person is distributed across world regions. Rather than comparing raw totals, which can be heavily influenced by country size and collection scale, normalizing by population allows for a fairer cross-country comparison of waste intensity.
 
 ```{r}
 #| fig-alt: "A ridgeline density plot showing the distribution of plastic waste per capita in pieces per person by continent, with four ridges for Europe, Americas, Asia, and Africa. All distributions are right-skewed and peak near zero plastic items recorded per person. Europe has the widest spread with several secondary peaks and one extreme outlier. Asia also has an extreme outlier at 0.010 pieces of plastic per capita. Africa is the most concentrated near zero with a slightly wider base than the others."
@@ -604,12 +605,16 @@ joined_all %>%
   ) %>% 
   tab_source_note(
     source_note = "Plastic per person was calculated as total plastic collected divided by population."
+  ) %>% 
+  opt_interactive(
+    use_pagination = TRUE,
+    page_size_default = 10    # number of rows shown at once
   )
 ```
 
 Montenegro, despite being one of the smallest countries in the dataset with a population of just over 600,000, ranks first in plastic per person at 0.017 items per person, suggesting an unusually concentrated collection effort relative to its size. Similarly, Bhutan and Switzerland rank highly despite modest absolute totals, while large-population countries like Nigeria and the Philippines, which appeared prominent in earlier figures, drop considerably when population is accounted for. This suggests that high total waste records in some countries occur due to population size and collection scale rather than disproportionate waste per-person.
 
-### Table 4: GDP Data
+### Table 4: Do Wealthier Countries Record More Plastic Waste per Person?
 
 Given the results from Table 3, where countries with higher absolute plastic totals tended to be smaller, wealthier nations like Montenegro and Switzerland, Table 4 investigates this pattern more formally by grouping countries into GDP per capita income brackets. This allows for a cleaner comparison of whether wealthier nations tend to generate more or less recorded plastic waste per person.
 
@@ -667,7 +672,7 @@ income_summary %>%
   )
 ```
 
-Table 4 reveals no clear pattern, after accounting for outliers at both ends of the income spectrum. The Low income group (<$10K GDP per capita) shows the highest average plastic per person at 0.00022, however the large gap between the mean (0.00022) and median (0.00003) confirms this is inflated by a small number of countries. Countries like Montenegro and Bhutan, identified in Table 3, are the likely culprits, where small populations amplify per capita figures even when absolute totals are modest. Comparing medians, the income groups do not seem to have a clear trend in plastic per capita.
+Table 4 reveals no clear pattern, after accounting for outliers at both ends of the income spectrum. The Low income group (\<\$10K GDP per capita) shows the highest average plastic per person at 0.00022, however the large gap between the mean (0.00022) and median (0.00003) confirms this is inflated by a small number of countries. Countries like Montenegro and Bhutan, identified in Table 3, are the likely culprits, where small populations amplify per capita figures even when absolute totals are modest. Comparing medians, the income groups do not seem to have a clear trend in plastic per capita.
 
 ### Figure 4: Recorded Plastic By GDP per Capita Scatterplot.
 
@@ -713,7 +718,7 @@ Based on Figure 4, here is a weak positive relationship if any, where countries 
 
 Countries with lower GDP per capita are tightly clustered near lower levels of plastic waste, particularly in Africa and parts of Asia. In contrast, higher-income countries, especially in Europe and the Americas, display much greater spread, with some countries generating very high levels of waste while others remain relatively low. This wide dispersion among wealthier countries suggests that economic development alone does not fully explain differences in plastic waste, and that other regional or structural factors are likely influencing the observed variation.
 
-# Data Model
+# Modeling the Effect of GDP and Region on Plastic Waste
 
 ```{r}
 country_year <- joined_all %>%
