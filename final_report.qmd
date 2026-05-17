@@ -748,7 +748,7 @@ model_data <- country_year %>%
   )
 
 plastic_model <- lm(
-  log_total_plastic ~ log_gdp + region,
+  log_total_plastic ~ log_gdp * region,
   data = model_data
 )
 
@@ -761,40 +761,62 @@ summary(plastic_model)
 library(broom)
 library(gt)
 
-model_table <- tidy(plastic_model, conf.int = TRUE) %>%
-  dplyr::select(term, estimate, std.error, statistic, p.value, conf.low, conf.high)
-
-model_gt <- model_table %>%
+tidy(plastic_model, conf.int = TRUE) %>%
+  dplyr::select(term, estimate, std.error, statistic, p.value, conf.low, conf.high) %>%
   gt() %>%
   cols_label(
-    term = md("**Term**"),
-    estimate = md("**Estimate**"),
+    term      = md("**Term**"),
+    estimate  = md("**Estimate**"),
     std.error = md("**Std. Error**"),
     statistic = md("**t Statistic**"),
-    p.value = md("**p-value**"),
-    conf.low = md("**CI Lower**"),
+    p.value   = md("**p-value**"),
+    conf.low  = md("**CI Lower**"),
     conf.high = md("**CI Upper**")
   ) %>%
-  fmt_number(
-    columns = c(estimate, std.error, statistic, conf.low, conf.high),
-    decimals = 3
+  fmt_number(columns = c(estimate, std.error, statistic, conf.low, conf.high), decimals = 3) %>%
+  fmt_number(columns = p.value, decimals = 4) %>%
+  tab_style(
+    style     = cell_fill(color = "#fff3cd"),
+    locations = cells_body(rows = p.value < 0.05)
   ) %>%
-  fmt_number(
-    columns = p.value,
-    decimals = 4
-  ) %>%
-  tab_header(
-    title = md("**Regression Model for Log Total Plastic**")
-  ) %>%
+  tab_header(title = md("**Table 5. Interaction Model Coefficients**")) %>%
   tab_source_note(
-    source_note = "Linear regression model predicting log total plastic from GDP and region."
+    source_note = "Log-linear model with GDP × Region interaction. Highlighted rows indicate p < 0.05."
   )
-
-model_gt
 ```
 
-This model examines how economic factors (GDP), population density, and geographic region are associated with plastic waste. The coefficient for log GDP is positive (β = 0.268), suggesting that countries with higher economic output tend to have higher levels of plastic waste. This relationship is only marginally significant (p = 0.0597), however still moderate evidence of an association at the 5% level.
+```{r}
+library(emmeans)
 
-Regional effects show clearer patterns. Compared to the reference region (Africa), countries in the Americas (β = −1.767, p = 0.0476), Asia (β = −1.689, p = 0.0336), Europe (β = −2.107, p = 0.0055), and Oceania (β = −4.502, p = 0.0216) all have significantly lower levels of plastic waste, holding GDP constant. These results suggest that geographic differences play an important role in plastic waste patterns, potentially reflecting differences in waste management systems, consumption behaviors, or environmental policies.
+emm <- emmeans(plastic_model, ~ region)
 
-Overall, the model provides evidence that regional factors are more strongly associated with plastic waste than economic activity, while GDP shows a weaker but suggestive relationship. This addresses our research question by indicating that both economic and geographic context contribute to variation in plastic waste across countries, with region emerging as an important factor.
+pairs(emm, adjust = "tukey") %>%
+  tidy() %>%
+  dplyr::select(contrast, estimate, std.error, df, statistic, adj.p.value) %>%
+  rename(p.value = adj.p.value) %>%
+  arrange(p.value) %>%
+  gt() %>%
+  cols_label(
+    contrast    = md("**Comparison**"),
+    estimate    = md("**Estimate**"),
+    std.error   = md("**Std. Error**"),
+    df          = md("**df**"),
+    statistic   = md("**t Statistic**"),
+    p.value     = md("**Adjusted p-value**")
+  ) %>%
+  fmt_number(columns = c(estimate, std.error, statistic), decimals = 3) %>%
+  fmt_number(columns = p.value, decimals = 4) %>%
+  fmt_number(columns = df, decimals = 0) %>%
+  tab_style(
+    style     = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>%
+  tab_header(title = md("**Table 6. All Pairwise Region Comparisons**"))
+```
+
+
+The interaction model in Table 5 allows the effect of GDP on plastic waste to vary across regions. None of the coefficients were statistically significant, including the main effect of log GDP (b = 0.405, p = 0.360) and all region main effects and interaction terms. The Oceania region produces an unusually large estimate (b = 3,309, p = 0.119) with an extremely wide confidence interval, which reflects the very small number of countries from Oceania in the dataset rather than a genuine effect. 
+
+The pairwise region comparisons in Table 6, adjusted for multiple comparisons using the Tukey method, show no statistically significant differences between any pair of regions. The largest difference is between Africa and Europe (estimate = 2.315, adjusted p = 0.135), but this comparison still only has moderate to weak evidence of a difference after adjustment. Comparisons involving Oceania are unreliable due to the extreme estimate instability noted above.
+
+Overall, neither GDP nor geographic region emerge as reliable predictors of recorded plastic waste in this model. This likely reflects two realities of the data: first, the dataset captures collection effort as much as true waste generation, meaning that country-level economic and geographic factors may be confounded with how intensively cleanup events were organized. Second, the interaction model requires substantially more parameters from a relatively small number of country-level observations, reducing statistical power. The evidence is insufficient to draw strong conclusions about whether GDP or region systematically predict recorded plastic waste, and this uncertainty should be acknowledged as a key limitation of the analysis.
